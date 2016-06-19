@@ -93,13 +93,40 @@ table mcast_src_pruning {
     size : 1;
 }
 
+#define CPU_MIRROR_SESSION_ID                  250
+
+field_list copy_to_cpu_fields {
+    standard_metadata;
+}
+
+action do_copy_to_cpu() {
+    clone_ingress_pkt_to_egress(CPU_MIRROR_SESSION_ID, copy_to_cpu_fields);
+}
+
+table copy_to_cpu {
+    actions {do_copy_to_cpu;}
+    size : 1;
+}
+
+action do_cpu_encap() {
+    add_header(cpu_header);
+    modify_field(cpu_header.in_port, standard_metadata.ingress_port);
+}
+
+table redirect {
+    reads { standard_metadata.instance_type : exact; }
+    actions { _nop; do_cpu_encap; }
+    size : 16;
+}
 
 control ingress {
     apply(smac);
     apply(dmac);
+    apply(copy_to_cpu);
 }
 
 control egress {
+    apply(redirect);
     if(standard_metadata.ingress_port == standard_metadata.egress_port) {
         apply(mcast_src_pruning);
     }

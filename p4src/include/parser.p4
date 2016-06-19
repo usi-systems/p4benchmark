@@ -8,7 +8,7 @@ header ipv6_t ipv6;
 header icmp_t icmp;
 header tcp_t tcp;
 header udp_t udp;
-header arp_rarp_t arp_rarp;
+header arp_t arp;
 header cpu_header_t cpu_header;
 
 
@@ -25,8 +25,8 @@ parser start {
 #define PARSE_ETHERTYPE                                    \
         ETHERTYPE_IPV4 : parse_ipv4;                       \
         ETHERTYPE_IPV6 : parse_ipv6;                       \
-        ETHERTYPE_ARP : parse_arp_rarp;                    \
-        ETHERTYPE_RARP : parse_arp_rarp;                   \
+        ETHERTYPE_ARP : parse_arp;                         \
+        ETHERTYPE_RARP : parse_arp;                        \
         default : ingress
 
 
@@ -89,15 +89,8 @@ parser parse_ipv4 {
         IP_PROTOCOLS_ICMP : parse_icmp;
         IP_PROTOCOLS_TCP : parse_tcp;
         IP_PROTOCOLS_UDP : parse_udp;
-        IP_PROTOCOLS_CPUP : parse_cpu_header;
         default: ingress;
     }
-}
-
-
-parser parse_cpu_header {
-    extract(cpu_header);
-    return ingress;
 }
 
 
@@ -129,11 +122,19 @@ parser parse_udp {
 }
 
 
-parser parse_arp_rarp {
-    extract(arp_rarp);
-    return select(latest.protoType) {
+parser parse_arp {
+    extract(arp);
+    return select(latest.pro) {
+        IP_PROTOCOLS_CPUP : parse_cpu_header;
         default: ingress;
     }
 }
+
+
+parser parse_cpu_header {
+    extract(cpu_header);
+    return ingress;
+}
+
 
 #endif

@@ -27,16 +27,19 @@ header_type vlan_tag_t {
 }
 
 
-header_type arp_rarp_t {
+header_type arp_t {
     fields {
-        hwType : 16;
-        protoType : 16;
-        hwAddrLen : 8;
-        protoAddrLen : 8;
-        opcode : 16;
+        hrd : 16;
+        pro : 16;
+        hln : 8;
+        pln : 8;
+        op  : 16;
+        sha : 48;
+        spa : 32;
+        tha : 48;
+        tpa : 32;
     }
 }
-
 
 header_type ipv4_t {
     fields {

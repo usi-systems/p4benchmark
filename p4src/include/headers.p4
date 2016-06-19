@@ -10,6 +10,12 @@ header_type ethernet_t {
     }
 }
 
+header_type cpu_header_t {
+    fields {
+        in_port : 8;
+    }
+}
+
 
 header_type vlan_tag_t {
     fields {
@@ -28,16 +34,6 @@ header_type arp_rarp_t {
         hwAddrLen : 8;
         protoAddrLen : 8;
         opcode : 16;
-    }
-}
-
-
-header_type arp_rarp_ipv4_t {
-    fields {
-        srcHwAddr : 48;
-        srcProtoAddr : 32;
-        dstHwAddr : 48;
-        dstProtoAddr : 32;
     }
 }
 

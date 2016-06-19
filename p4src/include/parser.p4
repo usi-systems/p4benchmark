@@ -9,6 +9,7 @@ header icmp_t icmp;
 header tcp_t tcp;
 header udp_t udp;
 header arp_rarp_t arp_rarp;
+header cpu_header_t cpu_header;
 
 
 parser start {
@@ -26,7 +27,7 @@ parser start {
         ETHERTYPE_IPV6 : parse_ipv6;                       \
         ETHERTYPE_ARP : parse_arp_rarp;                    \
         ETHERTYPE_RARP : parse_arp_rarp;                   \
-        default: ingress
+        default : ingress
 
 
 parser parse_ethernet {
@@ -36,6 +37,7 @@ parser parse_ethernet {
         PARSE_ETHERTYPE;
     }
 }
+
 
 #define VLAN_DEPTH 2
 header vlan_tag_t vlan_tag_[VLAN_DEPTH];
@@ -51,7 +53,7 @@ parser parse_vlan {
 #define IP_PROTOCOLS_ICMP              1
 #define IP_PROTOCOLS_TCP               6
 #define IP_PROTOCOLS_UDP               17
-
+#define IP_PROTOCOLS_CPUP              99
 
 field_list ipv4_checksum_list {
         ipv4.version;
@@ -80,14 +82,22 @@ calculated_field ipv4.hdrChecksum  {
     update ipv4_checksum if (ipv4.ihl == 5);
 }
 
+
 parser parse_ipv4 {
     extract(ipv4);
     return select(latest.protocol) {
         IP_PROTOCOLS_ICMP : parse_icmp;
         IP_PROTOCOLS_TCP : parse_tcp;
         IP_PROTOCOLS_UDP : parse_udp;
+        IP_PROTOCOLS_CPUP : parse_cpu_header;
         default: ingress;
     }
+}
+
+
+parser parse_cpu_header {
+    extract(cpu_header);
+    return ingress;
 }
 
 

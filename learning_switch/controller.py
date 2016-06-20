@@ -72,7 +72,7 @@ def server(args):
 
 def main():
     parser = argparse.ArgumentParser(description='receiver and sender to test P4 program')
-    parser.add_argument("-i", "--interface", default='veth1', help="bind to specified interface")
+    parser.add_argument("-i", "--interface", default='s1-eth1', help="bind to specified interface")
     parser.add_argument("-j", "--json", default='l2.json', help="input jason file")
     parser.add_argument("-p", "--port", default='22222', help="thrift port")
     args = parser.parse_args()

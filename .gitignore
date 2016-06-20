@@ -3,6 +3,7 @@
 *.ko
 *.obj
 *.elf
+*.json
 
 # Precompiled Headers
 *.gch

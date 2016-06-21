@@ -1,0 +1,4 @@
+table_set_default mac_to_vtep _nop
+table_set_default forwarding forward 2
+table_add forwarding forward 00:00:00:00:00:01 => 3
+table_add mac_to_vtep encap_vxlan 1e:1a:3c:ae:5f:95 => 22 1 2 3232235786 3232235787

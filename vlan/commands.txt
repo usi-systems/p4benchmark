@@ -1,0 +1,6 @@
+table_set_default vlan_tbl _nop
+table_set_default forward_tbl _drop
+table_add vlan_tbl tag_vlan 1 => 10
+table_add vlan_tbl untag_vlan 3 =>
+table_add forward_tbl forward 1 => 1
+table_add forward_tbl forward 2 => 2

@@ -1,0 +1,9 @@
+table_set_default smac mac_learn
+table_set_default dmac broadcast
+table_set_default mcast_src_pruning _nop
+table_set_default copy_to_cpu do_copy_to_cpu
+table_add mcast_src_pruning _drop 5 =>
+mc_mgrp_create 1
+mc_node_create 0 2 3 4
+mc_node_associate 1 0
+mirroring_add 250 1

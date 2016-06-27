@@ -11,4 +11,5 @@ The benchmark suite contains the following applications:
 | vxlan           | MAC-in-UDP           | Encapsulates and Decapsulates an Ethernet packet in an UDP packet           |
 | source routing  | recursive parsing    | Parse N nested headers                                                      |
 | nat             | table size           | Dynamically add table entries                                               |
+| mpls            | push, pop headers    | Push or Pop MPLS labels                                                     |
 |                 |                      |                                                                             |

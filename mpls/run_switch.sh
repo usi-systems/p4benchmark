@@ -1,6 +1,6 @@
 #!/bin/bash
 
-PROG="mpls"
+PROG="router"
 
 source ../env.sh
 

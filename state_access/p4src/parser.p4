@@ -80,6 +80,7 @@ metadata local_metadata_t local_metadata;
 
 parser parse_paxos {
     extract(paxos);
+    set_metadata(local_metadata.px_type, latest.px_type);
     return select(latest.px_type) {
         VALUE_TYPE : parse_value;
         RETRIEVE_TYPE : parse_retrieve;
@@ -91,7 +92,6 @@ header accept_t paxos_value;
 
 parser parse_value {
     extract(paxos_value);
-    set_metadata(local_metadata.index, latest.inst);
     return ingress;
 }
 

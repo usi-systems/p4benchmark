@@ -1,18 +1,4 @@
-table_set_default forward_tbl _drop
-table_set_default dummy_1 decrease
-table_set_default dummy_2 decrease
-table_set_default dummy_3 decrease
-table_set_default dummy_4 decrease
-table_set_default dummy_5 decrease
-table_set_default dummy_6 decrease
-table_set_default dummy_7 decrease
-table_set_default dummy_8 decrease
-table_set_default dummy_9 decrease
-table_set_default dummy_10 decrease
-table_set_default dummy_11 decrease
-table_set_default dummy_12 decrease
-table_set_default dummy_13 decrease
-table_set_default dummy_14 decrease
-table_set_default dummy_15 decrease
-table_add forward_tbl forward 1 => 1
-table_add forward_tbl forward 2 => 2
+table_set_default paxos_tbl _nop
+table_add paxos_tbl set_state 2 =>
+table_add paxos_tbl get_states 6 =>
+table_set_default circle repeat

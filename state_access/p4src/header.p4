@@ -64,6 +64,7 @@ header_type retrieve_t {
 
 header_type local_metadata_t {
     fields {
+        px_type : 16;
         index : 32;
         from : 32;
         to : 32;

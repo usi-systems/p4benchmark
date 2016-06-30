@@ -1,0 +1,9 @@
+table_set_default forward_tbl _drop
+table_set_default drop_tbl _drop
+table_set_default paxos_tbl _drop
+table_set_default ballot_tbl read_ballot
+table_add forward_tbl forward 1 => 2
+table_add forward_tbl forward 2 => 1
+table_add paxos_tbl handle_phase1a 0 =>
+table_add paxos_tbl handle_phase2a 2 =>
+register_write acceptor_id 0 1

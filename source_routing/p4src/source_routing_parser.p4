@@ -2,7 +2,7 @@
 
 header easy_route_t easy_route;
 header port_t ports[PORT_DEPTH];
-header easy_route_metadata_t ingress_meta;
+metadata easy_route_metadata_t ingress_meta;
 
 parser parse_easy_route {
     extract(easy_route);

@@ -21,7 +21,7 @@ parser parse_ethernet {
 }
 
 header mpls_label_t label_stack[STACK_DEPTH];
-header ingress_metadata_t ingress_metadata;
+metadata ingress_metadata_t ingress_metadata;
 
 parser parse_mpls_label {
     extract(label_stack[next]);

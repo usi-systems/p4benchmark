@@ -33,8 +33,7 @@ parser parse_ipv4 {
 parser parse_udp {
     extract(udp);
     return select(latest.dstPort) {
-        PAXOS_PROTOCOL_CORD : parse_paxos;
-        PAXOS_PROTOCOL_ACPT : parse_paxos;
+        PAXOS_PROTOCOL : parse_paxos;
         default: ingress;
     }
 }

@@ -1,8 +1,6 @@
 #define ETHERTYPE_IPV4 0x0800
 #define UDP_PROTOCOL 0x11
-#define PAXOS_PROTOCOL_CORD 0x8887
-#define PAXOS_PROTOCOL_ACPT 0x8888
-#define PAXOS_PROTOCOL_LERN 0x8889
+#define PAXOS_PROTOCOL 0x8888
 
 
 #define PAXOS_1A 0
@@ -15,7 +13,7 @@
 #define BALLOT_SIZE 16
 #define ACPTID_SIZE 16
 #define INST_COUNT 10
-#define VALUE_SIZE 16
+#define CHECKSUM_SIZE 32
 
 
 header_type ethernet_t {
@@ -58,6 +56,7 @@ header_type local_metadata_t {
         msgtype : MSGTYPE_SIZE;
         ballot : BALLOT_SIZE;
         packet_ballot : BALLOT_SIZE;
+        checksum : 32;
     }
 }
 
@@ -80,22 +79,22 @@ header_type phase1b_t {
     fields {
         ballot   : BALLOT_SIZE;
         vballot  : BALLOT_SIZE;
-        paxosval : VALUE_SIZE;
         acptid   : ACPTID_SIZE;
+        val_cksm : CHECKSUM_SIZE;
     }
 }
 
 header_type phase2a_t {
     fields {
         ballot   : BALLOT_SIZE;
-        paxosval : VALUE_SIZE;
+        val_cksm : CHECKSUM_SIZE;
     }
 }
 
 header_type phase2b_t {
     fields {
         ballot   : BALLOT_SIZE;
-        paxosval : VALUE_SIZE;
         acptid   : ACPTID_SIZE;
+        val_cksm : CHECKSUM_SIZE;
     }
 }

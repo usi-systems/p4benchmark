@@ -23,8 +23,8 @@ register vballots_register {
     instance_count : INST_COUNT;
 }
 
-register values_register {
-    width : VALUE_SIZE;
+register value_checksums {
+    width : CHECKSUM_SIZE;
     instance_count : INST_COUNT;
 }
 
@@ -59,29 +59,27 @@ table ballot_tbl {
 
 action handle_phase1a() {
     register_write(ballots_register, paxos.inst, paxos1a.ballot);
+    remove_header(paxos1a);
     add_header(paxos1b);
     modify_field(paxos.msgtype, PAXOS_1B);
     modify_field(paxos1b.ballot, paxos1a.ballot);
     register_read(paxos1b.vballot, vballots_register, paxos.inst);
-    register_read(paxos1b.paxosval, values_register, paxos.inst);
+    register_read(paxos1b.val_cksm, value_checksums, paxos.inst);
     register_read(paxos1b.acptid, acceptor_id, 0);
-    remove_header(paxos1a);
     modify_field(udp.checksum, 0);
-    modify_field(udp.dstPort, PAXOS_PROTOCOL_LERN);
 }
 
 action handle_phase2a() {
     register_write(ballots_register, paxos.inst, paxos2a.ballot);
     register_write(vballots_register, paxos.inst, paxos2a.ballot);
-    register_write(values_register, paxos.inst, paxos2a.paxosval);
+    register_write(value_checksums, paxos.inst, paxos2a.val_cksm);
+    remove_header(paxos2a);
     add_header(paxos2b);
     modify_field(paxos.msgtype, PAXOS_2B);
     modify_field(paxos2b.ballot, paxos2a.ballot);
-    modify_field(paxos2b.paxosval, paxos2a.paxosval);
+    modify_field(paxos2b.val_cksm, paxos2a.val_cksm);
     register_read(paxos2b.acptid, acceptor_id, 0);
-    remove_header(paxos2a);
     modify_field(udp.checksum, 0);
-    modify_field(udp.dstPort, PAXOS_PROTOCOL_LERN);
 }
 
 table drop_tbl {

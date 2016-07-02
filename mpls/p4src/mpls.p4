@@ -61,6 +61,7 @@ table LFIB {
         push_label;
         _drop;
     }
+    size : 4096;
 }
 
 
@@ -73,4 +74,5 @@ table IPFIB {
         ip_to_ip;
         _drop;
     }
+    size : 512;
 }

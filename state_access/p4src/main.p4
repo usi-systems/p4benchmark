@@ -43,6 +43,7 @@ table forward_tbl {
         forward;
         _drop;
     }
+    size : 128;
 }
 
 action set_state() {
@@ -63,6 +64,7 @@ table paxos_tbl {
         get_states;
         _nop;
     }
+    size : 4;
 }
 
 action repeat() {
@@ -76,6 +78,7 @@ table circle {
         _drop;
         repeat;
     }
+    size : 4;
 }
 
 control ingress {

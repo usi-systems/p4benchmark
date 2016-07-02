@@ -55,6 +55,7 @@ action read_ballot() {
 
 table ballot_tbl {
     actions { read_ballot; }
+    size : 1;
 }
 
 action handle_phase1a() {
@@ -84,6 +85,7 @@ action handle_phase2a() {
 
 table drop_tbl {
     actions { _drop; }
+    size : 1;
 }
 
 

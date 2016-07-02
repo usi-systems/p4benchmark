@@ -19,6 +19,7 @@ table forward_tbl {
         forward;
         _drop;
     }
+    size : 512;
 }
 control ingress {
     apply(forward_tbl);

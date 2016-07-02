@@ -122,6 +122,7 @@ table nat_in_out {
         map_public_addr;
         _nop;
     }
+    size : 128;
 }
 
 
@@ -138,6 +139,7 @@ table nat_out_in {
         map_private_addr;
         _nop;
     }
+    size : 128;
 }
 
 control ingress {

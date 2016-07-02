@@ -5,6 +5,7 @@ table dummy_1 {
     actions {
         decrease;
     }
+    size : 4;
 }
 
 table dummy_2 {
@@ -14,6 +15,7 @@ table dummy_2 {
     actions {
         decrease;
     }
+    size : 4;
 }
 
 
@@ -24,6 +26,7 @@ table dummy_3 {
     actions {
         decrease;
     }
+    size : 4;
 }
 
 
@@ -34,6 +37,7 @@ table dummy_4 {
     actions {
         decrease;
     }
+    size : 4;
 }
 
 table dummy_5 {
@@ -43,6 +47,7 @@ table dummy_5 {
     actions {
         decrease;
     }
+    size : 4;
 }
 
 table dummy_6 {
@@ -52,6 +57,7 @@ table dummy_6 {
     actions {
         decrease;
     }
+    size : 4;
 }
 
 table dummy_7 {
@@ -61,6 +67,7 @@ table dummy_7 {
     actions {
         decrease;
     }
+    size : 4;
 }
 
 table dummy_8 {
@@ -70,6 +77,7 @@ table dummy_8 {
     actions {
         decrease;
     }
+    size : 4;
 }
 
 table dummy_9 {
@@ -79,6 +87,7 @@ table dummy_9 {
     actions {
         decrease;
     }
+    size : 4;
 }
 
 table dummy_10 {
@@ -88,6 +97,7 @@ table dummy_10 {
     actions {
         decrease;
     }
+    size : 4;
 }
 
 table dummy_11 {
@@ -97,6 +107,7 @@ table dummy_11 {
     actions {
         decrease;
     }
+    size : 4;
 }
 
 table dummy_12 {
@@ -106,6 +117,7 @@ table dummy_12 {
     actions {
         decrease;
     }
+    size : 4;
 }
 
 table dummy_13 {
@@ -115,6 +127,7 @@ table dummy_13 {
     actions {
         decrease;
     }
+    size : 4;
 }
 
 table dummy_14 {
@@ -124,6 +137,7 @@ table dummy_14 {
     actions {
         decrease;
     }
+    size : 4;
 }
 
 table dummy_15 {
@@ -133,6 +147,7 @@ table dummy_15 {
     actions {
         decrease;
     }
+    size : 4;
 }
 
 control apply_dummy_tables {

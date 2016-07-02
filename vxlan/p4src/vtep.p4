@@ -198,6 +198,7 @@ table mac_to_vtep {
         encap_vxlan;
         _nop;
     }
+    size : 1024;
 }
 
 action _drop() {
@@ -215,6 +216,7 @@ table forwarding {
         forward;
         _drop;
     }
+    size : 1024;
 }
 
 

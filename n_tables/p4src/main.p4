@@ -51,6 +51,7 @@ table forward_tbl {
         forward;
         _drop;
     }
+    size : 1024;
 }
 
 

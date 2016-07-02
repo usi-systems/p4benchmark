@@ -72,6 +72,7 @@ table vlan_tbl {
         untag_vlan;
         _nop;
     }
+    size : 128;
 }
 
 table forward_tbl {
@@ -81,6 +82,7 @@ table forward_tbl {
         forward;
         _drop;
     }
+    size : 1024;
 }
 control ingress {
     apply(vlan_tbl);

@@ -91,16 +91,21 @@ action lookup_flow_map_reverse() {
     modify_field_with_hash_based_offset(stats_metadata.flow_map_index, 0, flow_map_hash_reverse, FLOW_MAP_SIZE);
     register_write(check_map, 1, stats_metadata.flow_map_index);
 }
+
 table lookup{
 	actions {
 		lookup_flow_map;
 	}
+    size : 1;
 }
+
 table lookup_reverse{
 	actions {
 		lookup_flow_map_reverse;
 	}
+    size : 1;
 }
+
 ///////////////////////////// initialization //////////////////////
 register MSS {
     width : 16;
@@ -115,19 +120,26 @@ register sendIP {
     width : 32;
     instance_count : ENTRIES;
 }
+
 action record_IP() {
 	register_write(sendIP, stats_metadata.flow_map_index, ipv4.dstAddr);
-	register_read(stats_metadata.senderIP, sendIP, stats_metadata.flow_map_index);
+	
+    //register_read(stats_metadata.senderIP, sendIP, stats_metadata.flow_map_index);
+    modify_field(stats_metadata.sendIP, ipv4.dstAddr);
+
 	register_write(MSS, stats_metadata.flow_map_index, options_mss.MSS);
 	register_write(wscale, stats_metadata.flow_map_index, options_wscale.wscale);
 	//first time, record initial window (10 MSS) in mincwnd
 	register_write(mincwnd, stats_metadata.flow_map_index, IW);
 }
+
 table init{
 	actions {
 		record_IP;
 	}
+    size : 1;
 }
+
 //////////// basic reading of stats before more processing  /////
 action get_sender_IP(){
 	register_read(stats_metadata.senderIP, sendIP, stats_metadata.flow_map_index);

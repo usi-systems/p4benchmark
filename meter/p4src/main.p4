@@ -14,6 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+#define METER_BY_BYTES 1
+
 header_type ethernet_t {
     fields {
         dstAddr : 48;
@@ -59,7 +61,11 @@ action _nop() {
 }
 
 meter my_meter {
+#ifdef METER_BY_BYTES
     type: bytes;
+#else
+    type : packets;
+#endif
     static: m_table;
     instance_count : 1024;
 }

@@ -1,9 +1,15 @@
 table_set_default forward_tbl _drop
-table_set_default drop_tbl _drop
-table_set_default paxos_tbl _drop
-table_set_default ballot_tbl read_ballot
+table_set_default drop_tbl _nop
+table_set_default paxos_acceptor _drop
+table_set_default paxos_proposer _drop
+table_set_default current_state read_registers
+table_set_default prepare_state update_prepare_state
+table_set_default next_phase send_accept
+table_add paxos_proposer handle_phase1b 1 =>
+table_add paxos_proposer handle_phase2b 3 =>
 table_add forward_tbl forward 1 => 2
 table_add forward_tbl forward 2 => 1
-table_add paxos_tbl handle_phase1a 0 =>
-table_add paxos_tbl handle_phase2a 2 =>
+table_add paxos_acceptor handle_phase1a 0 =>
+table_add paxos_acceptor handle_phase2a 2 =>
+table_add drop_tbl _drop 1 =>
 register_write acceptor_id 0 1

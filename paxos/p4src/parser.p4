@@ -59,6 +59,8 @@ parser parse_1a {
 parser parse_1b {
     extract(paxos1b);
     set_metadata(local_metadata.packet_ballot, latest.ballot);
+    set_metadata(local_metadata.packet_acptid, latest.acptid);
+    set_metadata(local_metadata.packet_vballot, latest.vballot);
     return ingress;
 }
 
@@ -71,5 +73,6 @@ parser parse_2a {
 parser parse_2b {
     extract(paxos2b);
     set_metadata(local_metadata.packet_ballot, latest.ballot);
+    set_metadata(local_metadata.packet_acptid, latest.acptid);
     return ingress;
 }

@@ -2,6 +2,8 @@
 #define UDP_PROTOCOL 0x11
 #define PAXOS_PROTOCOL 0x8888
 
+#define NUM_ACCEPTORS 3
+#define QUORUM_SIZE 2
 
 #define PAXOS_1A 0
 #define PAXOS_1B 1
@@ -13,7 +15,7 @@
 #define BALLOT_SIZE 16
 #define ACPTID_SIZE 16
 #define INST_COUNT 10
-#define CHECKSUM_SIZE 32
+#define PXVALUE_SIZE 32
 
 
 header_type ethernet_t {
@@ -56,6 +58,13 @@ header_type local_metadata_t {
         msgtype : MSGTYPE_SIZE;
         ballot : BALLOT_SIZE;
         packet_ballot : BALLOT_SIZE;
+        highest_accepted_ballot : BALLOT_SIZE;
+        packet_vballot : BALLOT_SIZE;
+        packet_acptid : ACPTID_SIZE;
+        acceptors: NUM_ACCEPTORS;
+        prepare_count : NUM_ACCEPTORS;
+        accepted_count : NUM_ACCEPTORS;
+        set_drop : 1;
         checksum : 32;
     }
 }
@@ -80,14 +89,14 @@ header_type phase1b_t {
         ballot   : BALLOT_SIZE;
         vballot  : BALLOT_SIZE;
         acptid   : ACPTID_SIZE;
-        val_cksm : CHECKSUM_SIZE;
+        pxvalue  : PXVALUE_SIZE;
     }
 }
 
 header_type phase2a_t {
     fields {
         ballot   : BALLOT_SIZE;
-        val_cksm : CHECKSUM_SIZE;
+        pxvalue  : PXVALUE_SIZE;
     }
 }
 
@@ -95,6 +104,6 @@ header_type phase2b_t {
     fields {
         ballot   : BALLOT_SIZE;
         acptid   : ACPTID_SIZE;
-        val_cksm : CHECKSUM_SIZE;
+        pxvalue  : PXVALUE_SIZE;
     }
 }

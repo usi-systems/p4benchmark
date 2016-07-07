@@ -9,6 +9,7 @@
 #define PAXOS_1B 1
 #define PAXOS_2A 2
 #define PAXOS_2B 3
+#define PAXOS_DELIVER 4
 
 #define MSGTYPE_SIZE 16
 #define INST_SIZE 32
@@ -62,8 +63,7 @@ header_type local_metadata_t {
         packet_vballot : BALLOT_SIZE;
         packet_acptid : ACPTID_SIZE;
         acceptors: NUM_ACCEPTORS;
-        prepare_count : NUM_ACCEPTORS;
-        accepted_count : NUM_ACCEPTORS;
+        count : NUM_ACCEPTORS;
         set_drop : 1;
         checksum : 32;
     }
@@ -104,6 +104,12 @@ header_type phase2b_t {
     fields {
         ballot   : BALLOT_SIZE;
         acptid   : ACPTID_SIZE;
+        pxvalue  : PXVALUE_SIZE;
+    }
+}
+
+header_type deliver_t {
+    fields {
         pxvalue  : PXVALUE_SIZE;
     }
 }

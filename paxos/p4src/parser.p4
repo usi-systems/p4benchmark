@@ -6,7 +6,7 @@ header phase1a_t paxos1a;
 header phase1b_t paxos1b;
 header phase2a_t paxos2a;
 header phase2b_t paxos2b;
-
+header deliver_t paxos_deliver;
 
 metadata local_metadata_t local_metadata;
 
@@ -46,6 +46,7 @@ parser parse_paxos {
         PAXOS_1B : parse_1b;
         PAXOS_2A : parse_2a;
         PAXOS_2B : parse_2b;
+        PAXOS_DELIVER : parse_deliver;
         default : ingress;
     }
 }
@@ -74,5 +75,10 @@ parser parse_2b {
     extract(paxos2b);
     set_metadata(local_metadata.packet_ballot, latest.ballot);
     set_metadata(local_metadata.packet_acptid, latest.acptid);
+    return ingress;
+}
+
+parser parse_deliver {
+    extract(paxos_deliver);
     return ingress;
 }

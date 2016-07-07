@@ -10,6 +10,7 @@ msgtype = {
     1 : 'PHASE1B',
     2 : 'PHASE2A',
     3 : 'PHASE2B',
+    4 : 'DELIVER',
 }
 
 class Paxos(Packet): 
@@ -49,6 +50,12 @@ class Phase2b(Packet):
                     XIntField("px_checksum", 0)
                     ]
 
+class Deliver(Packet):
+    name = "Deliver Message"
+    fields_desc =  [ 
+                    XIntField("px_checksum", 0)
+                    ]
+
 
 
 bind_layers(UDP, Paxos, dport=0x8888)
@@ -56,6 +63,7 @@ bind_layers(Paxos, Phase1a, {'px_type' : 0})
 bind_layers(Paxos, Phase1b, {'px_type' : 1})
 bind_layers(Paxos, Phase2a, {'px_type' : 2})
 bind_layers(Paxos, Phase2b, {'px_type' : 3})
+bind_layers(Paxos, Deliver, {'px_type' : 4})
 
 def generate(args):
     cksm =  (zlib.crc32(args.value)) % (1<<32)
@@ -73,7 +81,7 @@ def generate(args):
                 Phase2a(ballot=args.ballot, px_checksum=cksm) / args.value
     elif args.msgtype == 3:
         p = p / Paxos(inst=args.inst) / \
-                Phase2a(ballot=args.ballot, px_checksum=cksm) / args.value
+                Phase2b(ballot=args.ballot, acceptor=args.acceptor, px_checksum=cksm) / args.value
 
     hexdump(p)
     p.show()

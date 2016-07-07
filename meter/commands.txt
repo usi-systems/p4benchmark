@@ -4,4 +4,4 @@ table_set_default m_filter _drop
 table_add m_filter forward 0 => 1
 table_add m_filter forward 1 => 2
 table_add m_filter forward 2 => 3
-meter_array_set_rates my_meter 0.0000005:1 0.00001:1
+meter_array_set_rates my_meter 0.001:128 0.01:256

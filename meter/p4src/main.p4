@@ -59,7 +59,7 @@ action _nop() {
 }
 
 meter my_meter {
-    type: packets;
+    type: bytes;
     static: m_table;
     instance_count : 1024;
 }

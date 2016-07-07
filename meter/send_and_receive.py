@@ -34,13 +34,16 @@ def main():
                             help="set the sending interval")
     parser.add_argument("-c", "--count", type=int, default=1,
                             help="set the number of packets sent in one interval")
+    parser.add_argument("-v", "--vsize", type=int, default=10,
+                            help="set the number of bytes of value")
     args = parser.parse_args()
 
     Receiver("veth2").start()
     Receiver("veth4").start()
     Receiver("veth6").start()
 
-    p = Ether(src="aa:aa:aa:aa:aa:aa") / IP(dst="10.0.1.10") / TCP() / "aaaaaaaaaaaaaaaaaaa"
+    values = 'a' * args.vsize
+    p = Ether(src="aa:aa:aa:aa:aa:aa") / IP(dst="10.0.1.10") / TCP() /  values
 
     big_lock.acquire()
     sendp(p, iface=args.interface, inter=args.interval, count=args.count)

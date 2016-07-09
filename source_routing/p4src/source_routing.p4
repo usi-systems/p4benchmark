@@ -8,18 +8,19 @@ action _nop() {
 
 }
 
-action forward(port) {
-    modify_field(standard_metadata.egress_spec, port);
+action forward() {
+    modify_field(standard_metadata.egress_spec, ports[0].port);
 }
 
 table forward_tbl {
     reads {
-        eth.dl_dst : exact;
-    } actions {
+        easy_route.num_port : exact;
+    }
+    actions {
         forward;
         _drop;
     }
-    size : 512;
+    size : 2;
 }
 control ingress {
     apply(forward_tbl);

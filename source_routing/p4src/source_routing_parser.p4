@@ -1,4 +1,4 @@
-#define PORT_DEPTH 700
+#define PORT_DEPTH 20
 
 header easy_route_t easy_route;
 header port_t ports[PORT_DEPTH];

@@ -22,7 +22,7 @@ def generate(args):
 
     p = eth / ip / tcp / route
 
-    for i in range(args.ports):
+    for i in range(args.ports, 0, -1):
         p = p / EasyPort(port=i)
 
     # hexdump(p)

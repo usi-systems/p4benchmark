@@ -10,7 +10,7 @@ CLONE_SKB="clone_skb 0"
 PKT_SIZE="pkt_size 64"
 # Number of packets to send. The number 0 will send 
 # packets until the user stops the stream.
-COUNT="count 10000000"
+COUNT="count 500000"
 # The transmission delay between two packets.
 DELAY="delay 0"
 # Get the MAC address. This case we will user eth0 
@@ -20,7 +20,9 @@ ETH=$1
 MAC="00:00:00:00:00:02"
 
 # The rate of the stream.
-RATEP=`echo "scale=0; 2000000/$CPUS" | bc`
+#RATEP=`echo "scale=0; 2000000/$CPUS" | bc`
+RATEP=$2
+echo $RATEP
 
 function pgset() {
     local result
@@ -61,7 +63,7 @@ do
     # Set the delay variable defined above.
     pgset "$DELAY"
     # Set the rate of the stream.
-    # pgset "ratep $RATEP"
+    pgset "ratep $RATEP"
     # Set the destination of the packets.
     # You can you use your own range of IPs.
     # IMPORTANT: be aware, you can cause a DoS attack

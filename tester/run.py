@@ -4,22 +4,6 @@ from multiprocessing import Process
 from scapy.all import *
 import sys
 import argparse
-import time
-
-
-dpb_type = {
-    0 : 'Start',
-    1 : 'End',
-}
-
-
-class DPB(Packet):
-    name = 'Data plane benchmark'
-    fields = [
-        ShortEnumField("end", 1, dpb_type)
-    ]
-
-bind_layers(UDP, DPB, dport=1747)
 
 
 def send(args):
@@ -31,28 +15,15 @@ def send(args):
     p = p / ('a' * remain_bytes)
     print 'prepare to send...'
     sendpfast(p*args.count, iface = args.ingress, pps=args.pps, mbps=args.mbps)
-    last_packet = eth / ip / UDP(dport=1747) / DPB()
-    # wait for burst end
-    time.sleep(1)
-    sendp(last_packet, iface = args.ingress)
-
-
-def handle(x, output_count):
-    output_count[0] += 1
-
-def stop_sniffing(x):
-    return x.haslayer(DPB)
 
 def recv(args):
-    output_count = [0]
-    sniff(count=args.count, iface = args.egress,
-        prn = lambda x: handle(x, output_count), 
-        stop_filter= stop_sniffing,
+    p = sniff(count=args.count, iface = args.egress,
         timeout = args.timeout)
 
-    print 'received %d packets' % output_count[0]
+    output_count = len(p)
+    print 'received %d packets' % output_count
     input_count = args.count
-    frame_loss_rate = ( ( input_count - output_count[0] ) * 100.0 ) / input_count
+    frame_loss_rate = ( ( input_count - output_count ) * 100.0 ) / input_count
     print "loss rate: %f" % frame_loss_rate
 
 if __name__=='__main__':

@@ -104,7 +104,8 @@ pkt = Ether()/IP(dst='10.0.0.1', ttl=64)/TCP()
 port_map = {
     1: "veth3",
     2: "veth5",
-    3: "veth7"
+    3: "veth7",
+    4: "veth9"
 }
 
 iface_map = {}
@@ -113,6 +114,7 @@ for p, i in port_map.items():
 
 queue.add_iface("veth3")
 queue.add_iface("veth5")
+queue.add_iface("veth7")
 
 for p, iface in port_map.items():
     t = SnifferThread(iface)
@@ -123,7 +125,7 @@ import socket
 
 send_socket = socket.socket(socket.AF_PACKET, socket.SOCK_RAW,
                             socket.htons(0x03))
-send_socket.bind((port_map[3], 0))
+send_socket.bind((port_map[4], 0))
 
 delays = PacketDelay(10, 5, 25, 100, NUM_PACKETS)
 ports = []

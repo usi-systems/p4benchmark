@@ -150,9 +150,22 @@ table prefix_to_index {
     size : PREFIX_TABLE_SIZE;
 }
 
+action forward(out_port) {
+    modify_field(standard_metadata.egress_spec, out_port);
+}
+
+table fwd_tbl {
+    reads {
+        routing_metadata.hash_index : exact;
+    }
+    actions {
+        forward;
+    }
+}
 
 control ingress {
     if(valid(ipv4) and ipv4.ttl > 0) {
         apply(prefix_to_index);
+        apply(fwd_tbl);
     }
 }

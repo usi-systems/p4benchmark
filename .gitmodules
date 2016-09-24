@@ -1,0 +1,6 @@
+[submodule "behavioral-model"]
+	path = behavioral-model
+	url = https://github.com/p4lang/behavioral-model.git
+[submodule "p4c-bm"]
+	path = p4c-bm
+	url = https://github.com/p4lang/p4c-bm.git

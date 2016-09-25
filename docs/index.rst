@@ -6,23 +6,36 @@
 Welcome to Dataplane-Benchmark's documentation!
 ===============================================
 
-Contents:
+This project contains sets of P4 programs to benchmark the P4 compilers and the
+performance of P4 targets.
 
-.. toctree::
-   :maxdepth: 2
+Installation Dependencies
+-------------------------
 
-Features
---------
-
-- Benchmark P4 targets
-- Benchmark P4 compilers
-
-Installation
-------------
-
-Install $project by running:
+Install the dependencies of Dataplane Benchmark by running the following command::
 
     ./setup.sh
+
+Contents
+--------
+.. toctree::
+   :maxdepth: 1
+
+   l2_forwarding
+   learning_switch
+   5_tuples
+   flowlet_switching
+   ldp
+   meter
+   mpls
+   nat
+   registers
+   router
+   source_routing
+   tcp_options
+   vlan
+   vxlan
+
 
 Contribute
 ----------

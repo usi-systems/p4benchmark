@@ -15,3 +15,9 @@ The benchmark suite contains the following applications:
 | n_tables        | go through pipelines  | Pass packets through a varying length of pipelines                          |
 | state_access    | read & write register | Write to one element or Read from a range of register elements              |
 |                 |                       |                                                                             |
+
+## How to install?
+Simply run:
+```
+sudo ./setup.sh
+```

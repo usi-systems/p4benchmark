@@ -111,7 +111,13 @@ def benchmark_parser(args):
 
     applies = ''
     commands = ''
-    field_dec = 'dummy: 16;'
+    field_dec = ''
+    for i in range(args.fields):
+        if (i < args.fields - 1):
+            field_dec += 'dummy_%d: 16;\n\t\t' % i
+        else:
+            field_dec += 'dummy_%d: 16;' % i
+
     for i in range(args.headers):
         header_type_name = 'header_%d_t' % i
         header_name = 'header_%d' % i
@@ -146,6 +152,7 @@ def main():
                             help="pipeline benchmark")
     parser.add_argument("--tables", default=1, type=int, help="number of tables")
     parser.add_argument("--headers", default=1, type=int, help="number of headers")
+    parser.add_argument("--fields", default=1, type=int, help="number of fields")
 
     args = parser.parse_args()
 

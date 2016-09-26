@@ -1,4 +1,4 @@
-VXLAN
+VLAN
 =====
 
 This program illustrates a VTEP that encapsulates and decapsulates a VLAN tag

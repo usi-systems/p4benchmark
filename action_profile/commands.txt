@@ -1,0 +1,10 @@
+table_indirect_create_group ecmp_group
+table_indirect_create_member ecmp_group _nop
+table_indirect_create_member ecmp_group set_ecmp_nexthop 1
+table_indirect_create_member ecmp_group set_ecmp_nexthop 2
+table_indirect_create_member ecmp_group set_ecmp_nexthop 3
+table_indirect_add_member_to_group ecmp_group 1 0
+table_indirect_add_member_to_group ecmp_group 3 0
+table_indirect_set_default ecmp_group 0
+table_indirect_add_with_group ecmp_group 10.0.0.1 => 0
+table_dump ecmp_group

@@ -33,3 +33,6 @@
 # Debug files
 *.dSYM/
 *.su
+
+# Mac OSX
+*.DS_Store

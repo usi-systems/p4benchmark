@@ -1,0 +1,4 @@
+#define ETHERTYPE_IPV4 0x0800
+
+#define TCP_PROTOCOL 0x06
+#define UDP_PROTOCOL 0x11

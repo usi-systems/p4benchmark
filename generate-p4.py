@@ -57,15 +57,28 @@ def cli_commands(fwd_tbl, ):
 def default_nop(tbl_name):
     return read_template('template/commands/default_nop.txt', {'tbl_name': tbl_name})
 
-def generate_programs(args):
-    program_name = 'parser'
+def new_header(header_type_name, field_dec):
+    binding = {'header_type_name': header_type_name, 'field_dec': field_dec}
+    return read_template('template/headers/generic.txt', binding)
+
+def new_parser(header_type_name, header_name, parser_state_name, next_state):
+    binding = {'header_type_name': header_type_name, 'header_name': header_name                      ,
+             'parser_state_name': parser_state_name, 'next_state': next_state}
+    return read_template('template/parsers/parse_generic.txt', binding)
+
+def benchmark_pipeline(args):
+    program_name = 'table'
     if not os.path.exists(program_name):
        os.makedirs(program_name)
 
     fwd_tbl = 'forward_table'
 
+    field_dec = 'dummy: 16;'
+    header_type_name = 'header_0_t'
     program = p4_define() + ethernet() + ipv4() + tcp() + udp() + \
-                forward_table() + nop_action()
+            new_header(header_type_name, field_dec) + \
+            new_parser(header_type_name, 'header_0', 'parse_header_0', 'ingress') + \
+            forward_table() + nop_action()
 
     applies = ''
     commands = ''
@@ -87,19 +100,59 @@ def generate_programs(args):
     call(['cp', 'template/run_switch.sh', program_name])
 
 
+def benchmark_parser(args):
+    program_name = 'parser'
+    if not os.path.exists(program_name):
+       os.makedirs(program_name)
+
+    fwd_tbl = 'forward_table'
+
+    program = p4_define() + ethernet() + ipv4() + tcp() + udp()
+
+    applies = ''
+    commands = ''
+    field_dec = 'dummy: 16;'
+    for i in range(args.headers):
+        header_type_name = 'header_%d_t' % i
+        header_name = 'header_%d' % i
+        parser_state_name = 'parse_header_%d' % i
+        if (i < (args.headers - 1)):
+            next_state = 'parse_header_%d' % (i + 1)
+        else:
+            next_state = 'ingress'
+        program += new_header(header_type_name, field_dec)
+        program += new_parser(header_type_name, header_name, parser_state_name,
+                                next_state)
+
+    program += forward_table()
+    program += control(fwd_tbl, applies)
+
+    with open ('%s/main.p4' % program_name, 'w') as out:
+        out.write(program)
+
+    commands += cli_commands(fwd_tbl)
+    with open ('%s/commands.txt' % program_name, 'w') as out:
+        out.write(commands)
+
+    call(['cp', 'template/run_switch.sh', program_name])
+
+
 def main():
     parser = argparse.ArgumentParser(description='A programs that generate a set'
                             ' of P4 programs')
     parser.add_argument("-p", "--parser", default=False, action="store_true",
                             help="parser benchmark")
-    parser.add_argument("-t", "--tables", default=1, type=int, help="pipeline benchmark")
-    parser.add_argument("-v", "--vlan", default=False, action='store_true',
-                        help="send a VLAN tag packet")
+    parser.add_argument("--pipeline", default=False, action="store_true",
+                            help="pipeline benchmark")
+    parser.add_argument("--tables", default=1, type=int, help="number of tables")
+    parser.add_argument("--headers", default=1, type=int, help="number of headers")
 
     args = parser.parse_args()
 
     if args.parser:
-        generate_programs(args)
+        benchmark_parser(args)
+    elif args.pipeline:
+        benchmark_pipeline(args)
     else:
         parser.print_help()
 

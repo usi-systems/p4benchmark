@@ -2,3 +2,4 @@
 
 #define TCP_PROTOCOL 0x06
 #define UDP_PROTOCOL 0x11
+#define GENERIC_PROTOCOL 0x9091

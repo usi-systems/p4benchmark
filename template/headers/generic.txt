@@ -1,0 +1,5 @@
+header_type $header_type_name {
+    fields {
+        $field_dec
+    }
+}

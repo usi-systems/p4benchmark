@@ -1,0 +1,6 @@
+header $header_type_name $header_name;
+
+parser $parser_state_name {
+    extract($header_name);
+    return $next_state;
+}

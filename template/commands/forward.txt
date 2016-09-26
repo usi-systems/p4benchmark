@@ -1,0 +1,3 @@
+table_set_default $fwd_tbl _drop
+table_add $fwd_tbl forward 1 => 1
+table_add $fwd_tbl forward 2 => 2

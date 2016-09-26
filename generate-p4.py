@@ -3,11 +3,12 @@
 import sys, os
 import argparse
 from subprocess import call
+from string import Template
 
-def read_template(filename):
+def read_template(filename, binding={}):
     with open (filename, "r") as code_template:
-        data = code_template.readlines()
-    return data
+        src = Template(code_template.read())
+    return src.substitute(binding)
 
 def p4_define():
     p4_define = read_template('template/define.p4')
@@ -33,27 +34,36 @@ def udp():
     parse_udp = read_template('template/parsers/parse_udp.p4')
     return (udp_hdr + parse_udp)
 
-def forward_table():
-    fwd_tbl = read_template('template/tables/forward_table.p4')
-    return fwd_tbl
+def forward_table(tbl_name):
+    d = { 'tbl_name': tbl_name }
+    return read_template('template/tables/forward_table.p4', d)
 
-def control():
-    ingress = read_template('template/controls/ingress.p4')
-    return ingress
+def control(tbl_name):
+    d = { 'tbl_name': tbl_name }
+    return read_template('template/controls/ingress.p4', d)
+
+def cli_commands(tbl_name):
+    d = { 'tbl_name': tbl_name }
+    return read_template('template/commands.txt', d)
 
 def generate_programs(args):
     program_name = 'parser'
     if not os.path.exists(program_name):
        os.makedirs(program_name)
 
-    program = p4_define() + ethernet() + ipv4() + tcp() + udp() + forward_table() + control()
+    tbl_name = 'table_%d' % 1
 
-    program_text =  ('').join(program);
+    program = p4_define() + ethernet() + ipv4() + tcp() + udp() + \
+                forward_table(tbl_name) + control(tbl_name)
+
     with open ('%s/main.p4' % program_name, 'w') as out:
-        out.write(program_text)
+        out.write(program)
+
+
+    with open ('%s/commands.txt' % program_name, 'w') as out:
+        out.write(cli_commands(tbl_name))
 
     call(['cp', 'template/run_switch.sh', program_name])
-    call(['cp', 'template/commands.txt', program_name])
 
 
 def main():
@@ -61,6 +71,7 @@ def main():
                             ' of P4 programs')
     parser.add_argument("-p", "--parser", default=False, action="store_true",
                             help="parser benchmark")
+    parser.add_argument("-t", "--tables", default=1, help="pipeline benchmark")
     parser.add_argument("-v", "--vlan", default=False, action='store_true',
                         help="send a VLAN tag packet")
 

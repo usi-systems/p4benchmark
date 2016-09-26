@@ -1,3 +1,3 @@
-table_set_default forward_table _drop
-table_add forward_table forward 1 => 1
-table_add forward_table forward 2 => 2
+table_set_default $tbl_name _drop
+table_add $tbl_name forward 1 => 1
+table_add $tbl_name forward 2 => 2

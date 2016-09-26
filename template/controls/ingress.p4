@@ -1,3 +1,3 @@
 control ingress {
-    apply(forward_table);
+    apply($tbl_name);
 }

@@ -2,5 +2,5 @@ table $tbl_name {
     actions {
         _nop;
     }
-    size : 1;
+    size : $tbl_size;
 }

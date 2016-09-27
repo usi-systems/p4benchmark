@@ -6,7 +6,7 @@ from subprocess import call
 from string import Template
 
 def read_template(filename, binding={}):
-    with open (filename, "r") as code_template:
+    with open (filename, 'r') as code_template:
         src = Template(code_template.read())
     return src.substitute(binding)
 
@@ -41,8 +41,9 @@ def forward_table():
     d = { 'tbl_name': 'forward_table' }
     return read_template('template/tables/forward_table.txt', d)
 
-def nop_table(tbl_name):
-    return read_template('template/tables/nop_table.txt', {'tbl_name': tbl_name})
+def nop_table(tbl_name, tbl_size):
+    binding = {'tbl_name': tbl_name, 'tbl_size': tbl_size}
+    return read_template('template/tables/nop_table.txt', binding)
 
 def apply_table(tbl_name):
     return read_template('template/controls/apply_table.txt', {'tbl_name': tbl_name})
@@ -55,7 +56,8 @@ def cli_commands(fwd_tbl, ):
     return read_template('template/commands/forward.txt', { 'fwd_tbl' : fwd_tbl})
 
 def default_nop(tbl_name):
-    return read_template('template/commands/default_nop.txt', {'tbl_name': tbl_name})
+    binding = {'tbl_name': tbl_name}
+    return read_template('template/commands/default_nop.txt', binding)
 
 def new_header(header_type_name, field_dec):
     binding = {'header_type_name': header_type_name, 'field_dec': field_dec}
@@ -84,7 +86,7 @@ def benchmark_pipeline(args):
     commands = ''
     for i in range(args.tables):
         tbl_name = 'table_%d' % i
-        program += nop_table(tbl_name)
+        program += nop_table(tbl_name, args.table_size)
         applies += apply_table(tbl_name) + '\t'
         commands += default_nop(tbl_name)
 
@@ -146,13 +148,15 @@ def benchmark_parser(args):
 def main():
     parser = argparse.ArgumentParser(description='A programs that generate a set'
                             ' of P4 programs')
-    parser.add_argument("-p", "--parser", default=False, action="store_true",
-                            help="parser benchmark")
-    parser.add_argument("--pipeline", default=False, action="store_true",
-                            help="pipeline benchmark")
-    parser.add_argument("--tables", default=1, type=int, help="number of tables")
-    parser.add_argument("--headers", default=1, type=int, help="number of headers")
-    parser.add_argument("--fields", default=1, type=int, help="number of fields")
+    parser.add_argument('-p', '--parser', default=False, action='store_true',
+                            help='parser benchmark')
+    parser.add_argument('--pipeline', default=False, action='store_true',
+                            help='pipeline benchmark')
+    parser.add_argument('--tables', default=1, type=int, help='number of tables')
+    parser.add_argument('--table-size', default=1, type=int, help='number of rules'
+                            'in the table')
+    parser.add_argument('--headers', default=1, type=int, help='number of headers')
+    parser.add_argument('--fields', default=1, type=int, help='number of fields')
 
     args = parser.parse_args()
 

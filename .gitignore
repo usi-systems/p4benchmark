@@ -5,6 +5,7 @@
 *.elf
 *.json
 *.pcap
+*.pyc
 
 # Precompiled Headers
 *.gch
@@ -36,3 +37,6 @@
 
 # Mac OSX
 *.DS_Store
+
+# Generated directory
+*/output

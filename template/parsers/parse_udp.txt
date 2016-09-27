@@ -27,7 +27,7 @@ calculated_field udp.checksum {
 parser parse_udp {
     extract(udp);
     return select(latest.dstPort) {
-        GENERIC_PROTOCOL : parse_header_0;
+        $other_states
         default: ingress;
     }
 }

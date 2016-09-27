@@ -1,0 +1,4 @@
+register $register_name {
+    width : $element_width;
+    instance_count : $nb_element;
+}

@@ -1,0 +1,7 @@
+action get_value() {
+$read_set
+}
+
+action put_value() {
+$write_set
+}

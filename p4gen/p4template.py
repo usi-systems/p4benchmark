@@ -207,6 +207,22 @@ def new_header(header_type_name, field_dec):
     binding = {'header_type_name': header_type_name, 'field_dec': field_dec}
     return read_template('template/headers/generic.txt', binding)
 
+def new_metadata_instance(header_type_name, instance_name):
+    """
+    This method returns a code block that instantiates a metadata instance
+
+    :param header_type_name: the type name of the header
+    :type header_type_name: str
+    :param instance_name: the identifier of the metadata
+    :type instance_name: str
+    :returns:  str -- the code in plain text
+    :raises: None
+
+    """
+    binding = {'header_type_name': header_type_name, 'instance_name': instance_name}
+    return read_template('template/headers/metadata.txt', binding)
+
+
 def new_parser(header_type_name, header_name, parser_state_name, next_state):
     """
     This method returns a parser definition for a header

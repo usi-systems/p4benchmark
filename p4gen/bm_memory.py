@@ -22,7 +22,10 @@ def benchmark_memory(args):
     program += new_parser(header_type_name, header_name, parser_state_name,
                                 next_state)
 
-    field = '%s.data' % header_name
+    metadata = 'mem_metadata'
+    program += new_metadata_instance(header_type_name, metadata)
+
+    field = '%s.data' % metadata
     index = '%s.index' % header_name
     commands = ''
 

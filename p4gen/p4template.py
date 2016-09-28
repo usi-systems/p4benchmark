@@ -85,21 +85,38 @@ def forward_table():
     d = { 'tbl_name': 'forward_table' }
     return read_template('template/tables/forward_table.txt', d)
 
-def nop_table(tbl_name, tbl_size):
+def add_table_no_match(tbl_name, actions='_nop;', tbl_size=1):
     """
-    This method returns the table definition with only _nop action to benchmark
-    the pipeline
+    This method returns the table definition that matches everything
 
     :param tbl_name: the name of the table
     :type tbl_name: str
+    :param actions: the possible actions to be performed
+    :type actions: str
     :param tbl_size: the size of the table
     :type tbl_size: int
     :returns:  str -- the code in plain text
     :raises: None
 
     """
-    binding = {'tbl_name': tbl_name, 'tbl_size': tbl_size}
-    return read_template('template/tables/nop_table.txt', binding)
+    binding = {'tbl_name': tbl_name, 'actions': actions, 'tbl_size': tbl_size}
+    return read_template('template/tables/table_no_match.txt', binding)
+
+def add_default_rule(tbl_name, default_action):
+    """
+    This method returns a rule that sets a default action for the table
+
+    :param tbl_name: the name of the table
+    :type tbl_name: str
+    :param default_action: the default action if there is no match rule
+    :type default_action: str
+    :returns:  str -- the code in plain text
+    :raises: None
+
+    """
+    binding = {'tbl_name': tbl_name, 'default_action': default_action}
+    return read_template('template/commands/default_action.txt', binding)
+
 
 def add_table(tbl_name, matches='', actions='', tbl_size=1):
     """
@@ -173,8 +190,7 @@ def default_nop(tbl_name):
     :raises: None
 
     """
-    binding = {'tbl_name': tbl_name}
-    return read_template('template/commands/default_nop.txt', binding)
+    return add_default_rule(tbl_name, '_nop;')
 
 def add_header_field(field_name, field_width):
     """
@@ -278,6 +294,25 @@ def add_parser_without_select(header_type_name, header_name, parser_state_name,
     binding = {'header_type_name': header_type_name, 'header_name': header_name                      ,
              'parser_state_name': parser_state_name, 'next_state': next_state}
     return read_template('template/parsers/parse_no_select.txt', binding)
+
+def add_compound_action(action_name, params, instruction_set):
+    """
+    This method returns a compound action
+
+    :param action_name: the name of the compound action
+    :type action_name: str
+    :param params: the parameters for the action
+    :type params: str
+    :param instruction_set: the instruction set of this compound action
+    :type instruction_set: str
+    :returns:  str -- the code in plain text
+    :raises: None
+
+    """
+    binding = {'action_name' : action_name, 'params': params,
+                'instruction_set': instruction_set}
+    return read_template('template/actions/compound_action.txt', binding)
+
 
 def add_register(register_name, element_width, nb_element):
     """

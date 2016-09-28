@@ -4,8 +4,18 @@ from subprocess import call
 from p4template import *
 
 def add_headers_and_parsers(nb_headers, nb_fields):
-    # Generic headers are added after UDP header.
-    # 0x9091 is used to identify the generic header
+    """
+    This method adds Ethernet, IPv4, TCP, UDP, and a number of generic headers
+    which follow the UDP header. The UDP destination port 0x9091 is used to
+    identify the generic header
+
+    :param nb_headers: the number of generic headers included in the program
+    :type nb_headers: int
+    :param nb_fields: the number of fields (16 bits) in each header
+    :type tbl_size: int
+    :returns: str -- the header and parser definition
+
+    """
     program = p4_define() + ethernet() + ipv4() + tcp()
     program += udp(select_case(0x9091, 'parse_header_0'))
 

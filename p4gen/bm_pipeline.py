@@ -15,9 +15,10 @@ def benchmark_pipeline(args):
 
     applies = ''
     commands = ''
+    actions = '_nop;'
     for i in range(args.tables):
         tbl_name = 'table_%d' % i
-        program += nop_table(tbl_name, args.table_size)
+        program += add_table_no_match(tbl_name, actions, args.table_size)
         applies += apply_table(tbl_name) + '\t'
         commands += default_nop(tbl_name)
 

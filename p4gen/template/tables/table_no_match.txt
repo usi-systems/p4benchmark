@@ -1,6 +1,6 @@
 table $tbl_name {
     actions {
-        _nop;
+$actions
     }
     size : $tbl_size;
 }

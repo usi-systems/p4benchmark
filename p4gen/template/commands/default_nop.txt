@@ -1,1 +1,0 @@
-table_set_default $tbl_name _nop

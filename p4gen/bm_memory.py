@@ -1,9 +1,22 @@
 import os
 from subprocess import call
+from pkg_resources import resource_filename
 
 from p4template import *
 
-def benchmark_memory(args):
+def benchmark_memory(nb_registers, element_width, nb_elements):
+    """
+    This method generate the P4 program to benchmark memory consumption
+
+    :param nb_registers: the number of registers included in the program
+    :type nb_registers: int
+    :param element_width: the size of each register element
+    :type element_width: int
+    :param nb_elements: the number of elements in each register
+    :type nb_elements: int
+    :returns: bool -- True if there is no error
+
+    """
     program_name = 'output'
     if not os.path.exists(program_name):
        os.makedirs(program_name)
@@ -16,7 +29,7 @@ def benchmark_memory(args):
     parser_state_name = 'parse_memtest'
     field_dec  = add_header_field('register_op', 4)
     field_dec += add_header_field('index', 12)
-    field_dec += add_header_field('data', args.element_width)
+    field_dec += add_header_field('data', element_width)
 
     program += udp(select_case(0x9091, parser_state_name))
     program += add_header(header_type_name, field_dec)
@@ -34,9 +47,9 @@ def benchmark_memory(args):
 
     read_set = ''
     write_set = ''
-    for i in range(args.registers):
+    for i in range(nb_registers):
         register_name = 'register_%d' % i
-        program   += add_register(register_name, args.element_width, args.nb_element)
+        program   += add_register(register_name, element_width, nb_elements)
         read_set  += register_read(register_name, field, index)
         write_set += register_write(register_name, field, index)
 
@@ -57,4 +70,6 @@ def benchmark_memory(args):
     with open ('%s/commands.txt' % program_name, 'w') as out:
         out.write(commands)
 
-    call(['cp', 'template/run_switch.sh', program_name])
+    call(['cp', resource_filename(__name__, 'template/run_switch.sh'), program_name])
+
+    return True

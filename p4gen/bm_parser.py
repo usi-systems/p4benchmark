@@ -1,6 +1,6 @@
 import os
 from subprocess import call
-
+from pkg_resources import resource_filename
 from p4template import *
 
 def add_headers_and_parsers(nb_headers, nb_fields):
@@ -38,14 +38,24 @@ def add_headers_and_parsers(nb_headers, nb_fields):
     return program
 
 
-def benchmark_parser(args):
+def benchmark_parser(nb_headers, nb_fields):
+    """
+    This method generate the P4 program to benchmark the P4 parser
+
+    :param nb_headers: the number of generic headers included in the program
+    :type nb_headers: int
+    :param nb_fields: the number of fields (16 bits) in each header
+    :type tbl_size: int
+    :returns: bool -- True if there is no error
+
+    """
     program_name = 'output'
     if not os.path.exists(program_name):
        os.makedirs(program_name)
 
     fwd_tbl = 'forward_table'
 
-    program  = add_headers_and_parsers(args.headers, args.fields)
+    program  = add_headers_and_parsers(nb_headers, nb_fields)
     program += forward_table()
     program += control(fwd_tbl, '')
 
@@ -56,4 +66,6 @@ def benchmark_parser(args):
     with open ('%s/commands.txt' % program_name, 'w') as out:
         out.write(commands)
 
-    call(['cp', 'template/run_switch.sh', program_name])
+    call(['cp', resource_filename(__name__, 'template/run_switch.sh'), program_name])
+
+    return True

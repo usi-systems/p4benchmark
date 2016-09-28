@@ -1,5 +1,6 @@
 import os
 from subprocess import call
+from pkg_resources import resource_filename
 
 from p4template import *
 from bm_parser import add_headers_and_parsers
@@ -31,24 +32,36 @@ def benchmark_modify_header_overhead(action_name, nb_header):
     return add_compound_action(action_name, '', instruction_set)
 
 
-def benchmark_modification(args):
+def benchmark_modification(nb_headers, nb_fields, mod_type):
+    """
+    This method generate the P4 program to benchmark packet modification
+
+    :param nb_headers: the number of generic headers included in the program
+    :type nb_headers: int
+    :param nb_fields: the number of fields (16 bits) in each header
+    :type tbl_size: int
+    :param nb_fields: modification type ['add', 'rm', 'mod']
+    :type tbl_size: str
+    :returns: bool -- True if there is no error
+
+    """
     program_name = 'output'
     if not os.path.exists(program_name):
        os.makedirs(program_name)
 
     fwd_tbl = 'forward_table'
 
-    program  = add_headers_and_parsers(args.headers, args.fields)
+    program  = add_headers_and_parsers(nb_headers, nb_fields)
 
-    if args.mod_type == 'add':
+    if mod_type == 'add':
         action_name = 'add_headers'
-        program += benchmark_add_header_overhead(action_name, args.headers)
-    elif args.mod_type == 'rm':
+        program += benchmark_add_header_overhead(action_name, nb_headers)
+    elif mod_type == 'rm':
         action_name = 'remove_headers'
-        program += benchmark_remove_header_overhead(action_name, args.headers)
-    elif args.mod_type == 'mod':
+        program += benchmark_remove_header_overhead(action_name, nb_headers)
+    elif mod_type == 'mod':
         action_name = 'mod_headers'
-        program += benchmark_modify_header_overhead(action_name, args.headers)
+        program += benchmark_modify_header_overhead(action_name, nb_headers)
 
     program += forward_table()
 
@@ -66,4 +79,6 @@ def benchmark_modification(args):
     with open ('%s/commands.txt' % program_name, 'w') as out:
         out.write(commands)
 
-    call(['cp', 'template/run_switch.sh', program_name])
+    call(['cp', resource_filename(__name__, 'template/run_switch.sh'), program_name])
+
+    return True

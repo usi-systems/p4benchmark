@@ -1,4 +1,5 @@
 from string import Template
+from pkg_resources import resource_string
 
 def read_template(filename, binding={}):
     """
@@ -13,8 +14,7 @@ def read_template(filename, binding={}):
     :raises: None
 
     """
-    with open (filename, 'r') as code_template:
-        src = Template(code_template.read())
+    src = Template(resource_string(__name__, filename))
     return src.substitute(binding)
 
 def p4_define():

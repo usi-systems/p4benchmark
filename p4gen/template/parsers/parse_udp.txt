@@ -23,11 +23,3 @@ field_list_calculation udp_checksum {
 calculated_field udp.checksum {
     update udp_checksum;
 }
-
-parser parse_udp {
-    extract(udp);
-    return select(latest.dstPort) {
-        $other_states
-        default: ingress;
-    }
-}

@@ -64,22 +64,6 @@ def tcp():
     parse_tcp = read_template('template/parsers/parse_tcp.txt')
     return (tcp_hdr + parse_tcp)
 
-def udp(other_states=''):
-    """
-    This method returns the UDP header definition and its parser. It's possible
-    to provide an option to a next state along the default ingress
-
-    :param other_states: other options in 'return select' statement
-    :type other_states: str
-    :returns:  str -- the code in plain text
-    :raises: None
-
-    """
-    udp_hdr = read_template('template/headers/udp.txt')
-    binding = {'other_states': other_states}
-    parse_udp = read_template('template/parsers/parse_udp.txt', binding)
-    return (udp_hdr + parse_udp)
-
 def nop_action():
     """
     This method returns the _nop action definition
@@ -117,7 +101,7 @@ def nop_table(tbl_name, tbl_size):
     binding = {'tbl_name': tbl_name, 'tbl_size': tbl_size}
     return read_template('template/tables/nop_table.txt', binding)
 
-def new_table(tbl_name, matches='', actions='', tbl_size=1):
+def add_table(tbl_name, matches='', actions='', tbl_size=1):
     """
     This method returns the table definition with generic match-actions
 
@@ -192,7 +176,21 @@ def default_nop(tbl_name):
     binding = {'tbl_name': tbl_name}
     return read_template('template/commands/default_nop.txt', binding)
 
-def new_header(header_type_name, field_dec):
+def add_header_field(field_name, field_width):
+    """
+    This method returns header field declaration
+
+    :param field_name: the name of the field
+    :type field_name: str
+    :param field_width: the size in bit of the field
+    :type field_width: int
+    :returns:  str -- the code in plain text
+    :raises: None
+
+    """
+    return '\t\t{0: <8}: {1};\n'.format(field_name, field_width)
+
+def add_header(header_type_name, field_dec):
     """
     This method returns a header definition with its fields description
 
@@ -207,7 +205,7 @@ def new_header(header_type_name, field_dec):
     binding = {'header_type_name': header_type_name, 'field_dec': field_dec}
     return read_template('template/headers/generic.txt', binding)
 
-def new_metadata_instance(header_type_name, instance_name):
+def add_metadata_instance(header_type_name, instance_name):
     """
     This method returns a code block that instantiates a metadata instance
 
@@ -222,28 +220,66 @@ def new_metadata_instance(header_type_name, instance_name):
     binding = {'header_type_name': header_type_name, 'instance_name': instance_name}
     return read_template('template/headers/metadata.txt', binding)
 
+def select_case(select_key, next_state):
+    """
+    This method returns select case for a parser
 
-def new_parser(header_type_name, header_name, parser_state_name, next_state):
+    :param select_key: the action to read registers
+    :type select_key: str
+    :param next_state: the next state associated with the select key
+    :type next_state: str
+    :returns:  str -- the code in plain text
+    :raises: None
+
+    """
+    return '\t\t{0: <8}: {1};\n'.format(select_key, next_state)
+
+
+def add_parser(header_type_name, header_name, parser_state_name, select_field, next_states):
     """
     This method returns a parser definition for a header
 
     :param header_type_name: the type name of the header
     :type header_type_name: str
-    :param header_name: the name of a header instance
+    :param header_name: the name of a header instance to extract
     :type header_name: str
     :param parser_state_name: the name of this parser
     :type parser_state_name: str
-    :param next_state: the name of next parser
-    :type next_state: str
+    :param select_field: the header field that used to select the next parser
+    :type select_field: str
+    :param next_states: the possible next states
+    :type next_states: str
+    :returns:  str -- the code in plain text
+    :raises: None
+
+    """
+    binding = {'header_type_name': header_type_name, 'header_name': header_name                      ,
+             'parser_state_name': parser_state_name, 'select_field': select_field,
+             'next_states': next_states}
+    return read_template('template/parsers/parse_generic.txt', binding)
+
+def add_parser_without_select(header_type_name, header_name, parser_state_name,
+        next_state):
+    """
+    This method returns a parser without select statement
+
+    :param header_type_name: the type name of the header
+    :type header_type_name: str
+    :param header_name: the name of a header instance to extract
+    :type header_name: str
+    :param parser_state_name: the name of this parser
+    :type parser_state_name: str
+    :param next_states: the possible next states
+    :type next_states: str
     :returns:  str -- the code in plain text
     :raises: None
 
     """
     binding = {'header_type_name': header_type_name, 'header_name': header_name                      ,
              'parser_state_name': parser_state_name, 'next_state': next_state}
-    return read_template('template/parsers/parse_generic.txt', binding)
+    return read_template('template/parsers/parse_no_select.txt', binding)
 
-def new_register(register_name, element_width, nb_element):
+def add_register(register_name, element_width, nb_element):
     """
     This method returns a register definition
 
@@ -309,3 +345,39 @@ def register_write(register, field, index):
     """
     binding = {'register' : register, 'field': field, 'index': index}
     return read_template('template/actions/write_action.txt', binding)
+
+def add_udp_header():
+    """
+    This method returns the UDP header definition
+    :returns:  str -- the UDP header in plain text
+    :raises: None
+
+    """
+    return read_template('template/headers/udp.txt')
+
+def add_udp_parser(other_states=''):
+    """
+    This method returns the UDP parser. It's possible
+    to provide an option to a next state along the default ingress
+
+    :param other_states: other options in 'return select' statement
+    :type other_states: str
+    :returns:  str -- the code in plain text
+    :raises: None
+
+    """
+    next_states = other_states + select_case('default', 'ingress')
+    return add_parser('udp_t', 'udp', 'parse_udp', 'dstPort', next_states)
+
+def udp(other_states=''):
+    """
+    This method returns the UDP header and parser. It's possible
+    to provide an option to a next state along the default ingress
+
+    :param other_states: other options in 'return select' statement
+    :type other_states: str
+    :returns:  str -- the code in plain text
+    :raises: None
+
+    """
+    return (add_udp_header() + add_udp_parser(other_states))

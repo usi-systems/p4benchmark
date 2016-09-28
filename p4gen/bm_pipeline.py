@@ -10,8 +10,6 @@ def benchmark_pipeline(args):
 
     fwd_tbl = 'forward_table'
 
-    field_dec = 'dummy: 16;'
-    header_type_name = 'header_0_t'
     program = p4_define() + ethernet() + ipv4() + tcp() + udp() + \
             forward_table() + nop_action()
 

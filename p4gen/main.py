@@ -28,6 +28,8 @@ def main():
                             help='number of element in a register')
     parser.add_argument('--element-width', default=32, type=int,
                             help='the bit width of a register element')
+    parser.add_argument('--mod-type', default='add', type=str,
+                            help='modification type [add, rm, mod]')
 
     args = parser.parse_args()
 

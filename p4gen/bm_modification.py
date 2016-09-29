@@ -80,5 +80,6 @@ def benchmark_modification(nb_headers, nb_fields, mod_type):
         out.write(commands)
 
     call(['cp', resource_filename(__name__, 'template/run_switch.sh'), program_name])
+    call(['cp', resource_filename(__name__, 'template/run_test.py'), program_name])
 
     return True

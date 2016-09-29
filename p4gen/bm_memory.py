@@ -71,5 +71,6 @@ def benchmark_memory(nb_registers, element_width, nb_elements):
         out.write(commands)
 
     call(['cp', resource_filename(__name__, 'template/run_switch.sh'), program_name])
+    call(['cp', resource_filename(__name__, 'template/run_test.py'), program_name])
 
     return True

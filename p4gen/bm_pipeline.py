@@ -44,5 +44,6 @@ def benchmark_pipeline(nb_tables, table_size):
         out.write(commands)
 
     call(['cp', resource_filename(__name__, 'template/run_switch.sh'), program_name])
+    call(['cp', resource_filename(__name__, 'template/run_test.py'), program_name])
 
     return True

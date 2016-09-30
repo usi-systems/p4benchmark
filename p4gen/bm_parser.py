@@ -3,6 +3,111 @@ from subprocess import call
 from pkg_resources import resource_filename
 from p4template import *
 
+class ParseNode():
+    def __init__(self, parent=None, node_name='', code=''):
+        self.parent = parent
+        self.node_name = node_name
+        self.code = code
+        self.children = []
+
+    def set_parent(self, parent):
+        self.parent = parent
+
+    def add_children(self, child):
+        self.children.append(child)
+
+    def get_node_name(self):
+        return self.node_name
+
+    def get_children(self):
+        return self.children
+
+    def get_code(self):
+        return self.code
+
+def preorder(node):
+    program = ''
+    if node:
+        program += node.get_code()
+        for n in node.get_children():
+            program += preorder(n)
+    return program
+
+def loop_rec(root, depth, fanout):
+    for i in range(fanout):
+        node_name = root.get_node_name() + '_%d' % i
+        header_type_name = 'header{0}_t'.format(node_name)
+        header_name = 'header{0}'.format(node_name)
+        parser_state_name = 'parse_header{0}'.format(node_name)
+        select_field = 'field_0'
+        next_states = ''
+        if depth == 0:
+            next_states = select_case('default', 'ingress')
+        else:
+            for j in range(fanout):
+                next_states += select_case(j+1, '{0}_{1}'.format(parser_state_name, j))
+            next_states += select_case('default', 'ingress')
+
+        field_dec = add_header_field('field_0', 16)
+        code = add_header(header_type_name, field_dec)
+        code += add_parser(header_type_name, header_name, parser_state_name,
+            select_field, next_states)
+
+        n = ParseNode(root, node_name, code)
+
+        root.add_children(n)
+        if depth > 0:
+            loop_rec(n, depth-1, fanout)
+
+
+def add_forwarding_table(output_dir, program):
+    fwd_tbl = 'forward_table'
+    program += forward_table()
+    program += control(fwd_tbl, '')
+    commands = cli_commands(fwd_tbl)
+    with open ('%s/commands.txt' % output_dir, 'w') as out:
+        out.write(commands)
+    return program
+
+def write_output(output_dir, program):
+    if not os.path.exists(output_dir):
+       os.makedirs(output_dir)
+    with open ('%s/main.p4' % output_dir, 'w') as out:
+        out.write(program)
+    call(['cp', resource_filename(__name__, 'template/run_switch.sh'), output_dir])
+    call(['cp', resource_filename(__name__, 'template/run_test.py'), output_dir])
+
+
+def add_number_of_branchings(depth, fanout):
+    """
+    This method adds Ethernet, IPv4, TCP, UDP, and a number of generic headers
+    which follow the UDP header. The UDP destination port 0x9091 is used to
+    identify the generic header
+
+    :param depth: the depth of the parsing graph
+    :type depth: int
+    :param fanout: the number branches for each node
+    :type fanout: int
+    :returns: str -- the header and parser definition
+
+    """
+    program = p4_define() + ethernet() + ipv4() + tcp()
+    udp_next_states = ''
+    for i in range(fanout):
+        udp_next_states += select_case(0x9091 + i, 'parse_header_%d' % i)
+
+    program += udp(udp_next_states)
+
+    root = ParseNode()
+    loop_rec(root, depth, fanout)
+    program += preorder(root)
+
+    output_dir = 'output'
+    program = add_forwarding_table(output_dir, program)
+    write_output(output_dir, program)
+
+    return True
+
 def add_headers_and_parsers(nb_headers, nb_fields):
     """
     This method adds Ethernet, IPv4, TCP, UDP, and a number of generic headers
@@ -12,7 +117,7 @@ def add_headers_and_parsers(nb_headers, nb_fields):
     :param nb_headers: the number of generic headers included in the program
     :type nb_headers: int
     :param nb_fields: the number of fields (16 bits) in each header
-    :type tbl_size: int
+    :type nb_fields: int
     :returns: str -- the header and parser definition
 
     """
@@ -49,24 +154,8 @@ def benchmark_parser(nb_headers, nb_fields):
     :returns: bool -- True if there is no error
 
     """
-    program_name = 'output'
-    if not os.path.exists(program_name):
-       os.makedirs(program_name)
-
-    fwd_tbl = 'forward_table'
-
+    output_dir = 'output'
     program  = add_headers_and_parsers(nb_headers, nb_fields)
-    program += forward_table()
-    program += control(fwd_tbl, '')
-
-    with open ('%s/main.p4' % program_name, 'w') as out:
-        out.write(program)
-
-    commands = cli_commands(fwd_tbl)
-    with open ('%s/commands.txt' % program_name, 'w') as out:
-        out.write(commands)
-
-    call(['cp', resource_filename(__name__, 'template/run_switch.sh'), program_name])
-    call(['cp', resource_filename(__name__, 'template/run_test.py'), program_name])
-
+    program = add_forwarding_table(output_dir, program)
+    write_output(output_dir, program)
     return True

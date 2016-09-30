@@ -248,7 +248,7 @@ def select_case(select_key, next_state):
     :raises: None
 
     """
-    return '\t\t{0: <8}: {1};\n'.format(select_key, next_state)
+    return '\t{0: <8}: {1};\n'.format(select_key, next_state)
 
 
 def add_parser(header_type_name, header_name, parser_state_name, select_field, next_states):

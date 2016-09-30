@@ -31,6 +31,20 @@ class CompilationTests(unittest.TestCase):
         ret = call([self.p4c, 'output/%s.p4' % prog , '--json', 'output/%s.json' % prog])
         self.assertEqual(ret, 0)
 
+    def test_benchmark_complex_branching_generator(self):
+        ret = p4gen.bm_parser.add_number_of_branchings(5, 4)
+        self.assertTrue(ret)
+        prog = 'main'
+        ret = call([self.p4c, 'output/%s.p4' % prog , '--json', 'output/%s.json' % prog])
+        self.assertEqual(ret, 0)
+
+    def test_benchmark_complex_branching_generator2(self):
+        ret = p4gen.bm_parser.add_number_of_branchings(4, 5)
+        self.assertTrue(ret)
+        prog = 'main'
+        ret = call([self.p4c, 'output/%s.p4' % prog , '--json', 'output/%s.json' % prog])
+        self.assertEqual(ret, 0)
+
     def test_benchmark_pipeline_generator(self):
         ret = p4gen.bm_pipeline.benchmark_pipeline(10, 128)
         self.assertTrue(ret)

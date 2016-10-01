@@ -17,7 +17,7 @@ class BasicTestSuite(unittest.TestCase):
         self.assertTrue(ret)
 
     def test_benchmark_memory_consumption(self):
-        ret = p4gen.bm_memory.benchmark_memory(10, 32, 1024)
+        ret = p4gen.bm_memory.benchmark_memory(10, 32, 1024, 1)
         self.assertTrue(ret)
 
     def test_benchmark_add_header(self):

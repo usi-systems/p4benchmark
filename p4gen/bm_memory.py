@@ -4,7 +4,42 @@ from pkg_resources import resource_filename
 
 from p4template import *
 
-def benchmark_memory(nb_registers, element_width, nb_elements):
+
+def add_registers(nb_registers, element_width, nb_elements, nb_operations,
+        field, index):
+    """
+    This method generate the P4 code of register declaration and register actions
+
+    :param nb_registers: the number of registers included in the program
+    :type nb_registers: int
+    :param element_width: the size of each register element
+    :type element_width: int
+    :param nb_elements: the number of elements in each register
+    :type nb_elements: int
+    :param nb_operations: the number of operations to the registers
+    :type nb_operations: int
+    :param field: the reference field for register read or write
+    :type field: str
+    :param index: the index of register element involving in the operation
+    :type index: int
+    :returns: bool -- True if there is no error
+
+    """
+    code_block = ''
+    read_set = ''
+    write_set = ''
+    for i in range(nb_registers):
+        register_name = 'register_%d' % i
+        code_block += add_register(register_name, element_width, nb_elements)
+        for j in range(nb_operations):
+            read_set  += register_read(register_name, field, index)
+            write_set += register_write(register_name, field, index)
+
+    code_block += register_actions(read_set, write_set)
+    return code_block
+
+
+def benchmark_memory(nb_registers, element_width, nb_elements, nb_operations):
     """
     This method generate the P4 program to benchmark memory consumption
 
@@ -13,6 +48,8 @@ def benchmark_memory(nb_registers, element_width, nb_elements):
     :param element_width: the size of each register element
     :type element_width: int
     :param nb_elements: the number of elements in each register
+    :type nb_elements: int
+    :param nb_elements: the number of operations to the registers
     :type nb_elements: int
     :returns: bool -- True if there is no error
 
@@ -38,22 +75,14 @@ def benchmark_memory(nb_registers, element_width, nb_elements):
 
     metadata = 'mem_metadata'
     program += add_metadata_instance(header_type_name, metadata)
-
     field = '%s.data' % metadata
     index = '%s.index' % header_name
-    commands = ''
 
     program += nop_action()
 
-    read_set = ''
-    write_set = ''
-    for i in range(nb_registers):
-        register_name = 'register_%d' % i
-        program   += add_register(register_name, element_width, nb_elements)
-        read_set  += register_read(register_name, field, index)
-        write_set += register_write(register_name, field, index)
+    program += add_registers(nb_registers, element_width, nb_elements, nb_operations,
+                    field, index)
 
-    program += register_actions(read_set, write_set)
     matches = '%s.register_op : exact;' % header_name
     actions = 'get_value; put_value; _nop;'
     table_name = 'register_table'
@@ -66,6 +95,7 @@ def benchmark_memory(nb_registers, element_width, nb_elements):
     with open ('%s/main.p4' % program_name, 'w') as out:
         out.write(program)
 
+    commands = ''
     commands += cli_commands(fwd_tbl)
     with open ('%s/commands.txt' % program_name, 'w') as out:
         out.write(commands)

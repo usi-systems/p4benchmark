@@ -32,8 +32,12 @@ class ParserTests(unittest.TestCase):
         ret = p4gen.bm_parser.add_number_of_branchings(2, 10)
         self.assertTrue(ret)
 
-    def test_benchmark_parser_complexity_big_depth(self):
+    def test_benchmark_parser_complexity_medium_depth(self):
         ret = p4gen.bm_parser.add_number_of_branchings(10, 2)
+        self.assertTrue(ret)
+
+    def test_benchmark_parser_complexity_big_depth(self):
+        ret = p4gen.bm_parser.add_number_of_branchings(950, 1)
         self.assertTrue(ret)
 
     def test_benchmark_parser_complexity_big(self):

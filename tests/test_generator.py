@@ -53,7 +53,7 @@ class CompilationTests(unittest.TestCase):
         self.assertEqual(ret, 0)
 
     def test_benchmark_memory_consumption_generator(self):
-        ret = p4gen.bm_memory.benchmark_memory(10, 32, 1024)
+        ret = p4gen.bm_memory.benchmark_memory(10, 32, 1024, 1)
         self.assertTrue(ret)
         prog = 'main'
         ret = call([self.p4c, 'output/%s.p4' % prog , '--json', 'output/%s.json' % prog])

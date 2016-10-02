@@ -11,3 +11,7 @@ message (STATUS "This is CMAKE_CXX_FLAGS " ${CMAKE_CXX_FLAGS})
 add_executable (sniffer sniffex.c)
 target_link_libraries (sniffer ${PCAP_LIBRARIES})
 set_target_properties (sniffer PROPERTIES COMPILE_FLAGS ${CMAKE_CXX_FLAGS})
+
+add_executable (packet_parser packet_parser.c)
+target_link_libraries (packet_parser ${PCAP_LIBRARIES})
+set_target_properties (packet_parser PROPERTIES COMPILE_FLAGS ${CMAKE_CXX_FLAGS})

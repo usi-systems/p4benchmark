@@ -424,7 +424,7 @@ got_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *packet)
     const struct sniff_ethernet *ethernet;  /* The ethernet header [1] */
     const struct sniff_ip *ip;              /* The IP header */
     const struct sniff_tcp *tcp;            /* The TCP header */
-    const char *payload;                    /* Packet payload */
+    const u_char *payload;                    /* Packet payload */
 
     int size_ip;
     int size_tcp;

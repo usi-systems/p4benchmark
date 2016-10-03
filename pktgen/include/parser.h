@@ -31,6 +31,6 @@ void too_short(struct timeval ts, const char *truncated_hdr);
 void dump_udp_packet(const unsigned char *packet, struct timeval ts,
             unsigned int capture_len);
 
-int read_pcap(char* pcap_path);
+pcap_t* read_pcap(char* pcap_path);
 
 #endif

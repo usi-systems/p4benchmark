@@ -42,14 +42,33 @@ int main(int argc, char* argv[])
 {
     print_app_banner(argv[0]);
 
-    read_pcap(argv[1]);
-
     if (argc < 4) {
         print_app_usage(argv[0]);
         exit(EXIT_SUCCESS);
     }
 
-    capture(argv[2], argv[3]);
+    pcap_t *input_packets = read_pcap(argv[1]);
+
+
+    struct bpf_program fp;    
+    pcap_t *handle = init_dev(&fp, argv[2], argv[3]);
+
+
+    const unsigned char *packet;
+    struct pcap_pkthdr header;
+    /* Now just loop through extracting packets as long as we have
+     * some to read.
+     */
+    while ((packet = pcap_next(input_packets, &header)) != NULL)
+        pcap_inject(handle, packet, header.caplen);
+        // dump_udp_packet(packet, header.ts, header.caplen);
+
+    // capture(argv[2], argv[3]);
+
+    /* cleanup */
+    pcap_freecode(&fp);
+    pcap_close(handle);
+    pcap_close(input_packets);
 
     return 0;
 }

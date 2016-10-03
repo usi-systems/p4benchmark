@@ -208,17 +208,15 @@ return;
 }
 
 /*
- * Start capture on dev
+ * Initialize a device and return a pcap handler
  */
-int capture(char *dev, char* filter_exp)
+pcap_t*
+init_dev(struct bpf_program *fp, char *dev, char* filter_exp)
 {
-
+    pcap_t *handle;
     char errbuf[PCAP_ERRBUF_SIZE];  /* error buffer */
-    pcap_t *handle;                 /* packet capture handle */
-    struct bpf_program fp;          /* compiled filter program (expression) */
     bpf_u_int32 mask;               /* subnet mask */
     bpf_u_int32 net;                /* ip */
-    int num_packets = 10;           /* number of packets to capture */
 
     /* get network number and mask associated with capture device */
     if (pcap_lookupnet(dev, &net, &mask, errbuf) == -1) {
@@ -230,7 +228,6 @@ int capture(char *dev, char* filter_exp)
 
     /* print capture info */
     printf("Device: %s\n", dev);
-    printf("Number of packets: %d\n", num_packets);
     printf("Filter expression: %s\n", filter_exp);
 
     /* open capture device */
@@ -247,22 +244,34 @@ int capture(char *dev, char* filter_exp)
     }
 
     /* compile the filter expression */
-    if (pcap_compile(handle, &fp, filter_exp, 0, net) == -1) {
+    if (pcap_compile(handle, fp, filter_exp, 0, net) == -1) {
         fprintf(stderr, "Couldn't parse filter %s: %s\n",
             filter_exp, pcap_geterr(handle));
         exit(EXIT_FAILURE);
     }
 
     /* apply the compiled filter */
-    if (pcap_setfilter(handle, &fp) == -1) {
+    if (pcap_setfilter(handle, fp) == -1) {
         fprintf(stderr, "Couldn't install filter %s: %s\n",
             filter_exp, pcap_geterr(handle));
         exit(EXIT_FAILURE);
     }
 
+    return handle;
+}
+
+/*
+ * Start capture on dev
+ */
+int capture(char *dev, char* filter_exp)
+{
+    pcap_t *handle;
+    struct bpf_program fp;          /* compiled filter program (expression) */
+    handle = init_dev(&fp, dev, filter_exp); /* initialize the device for capturing */
+
+    int num_packets = 10;           /* number of packets to capture */
     /* now we can set our callback function */
     pcap_loop(handle, num_packets, got_packet, NULL);
-
     /* cleanup */
     pcap_freecode(&fp);
     pcap_close(handle);

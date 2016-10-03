@@ -22,4 +22,7 @@ print_hex_ascii_line(const u_char *payload, int len, int offset);
 int
 capture(char *dev, char* filter_exp);
 
+pcap_t*
+init_dev(struct bpf_program *fp, char *dev, char* filter_exp);
+
 #endif

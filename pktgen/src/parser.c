@@ -84,28 +84,20 @@ void dump_udp_packet(const unsigned char *packet, struct timeval ts,
 }
 
 
-int read_pcap(char* pcap_path)
+pcap_t* read_pcap(char* pcap_path)
 {
 	pcap_t *pcap;
-	const unsigned char *packet;
 	char errbuf[PCAP_ERRBUF_SIZE];
-	struct pcap_pkthdr header;
 
 
 	pcap = pcap_open_offline(pcap_path, errbuf);
 	if (pcap == NULL)
 	{
 		fprintf(stderr, "error reading pcap file: %s\n", errbuf);
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 
-	/* Now just loop through extracting packets as long as we have
-	 * some to read.
-	 */
-	while ((packet = pcap_next(pcap, &header)) != NULL)
-		dump_udp_packet(packet, header.ts, header.caplen);
-
-	return 0;
+	return pcap;
 }
 
 

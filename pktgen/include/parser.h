@@ -1,5 +1,5 @@
-#ifndef _PACKET_PARSER_H_
-#define _PACKET_PARSER_H_
+#ifndef _PARSER_H_
+#define _PARSER_H_
 
 #include <stdio.h>
 #include <stdlib.h>

@@ -19,7 +19,7 @@
 
 #include <pcap.h>
 
-#include "packet_parser.h"
+#include "parser.h"
 
 void dump_udp_packet(const unsigned char *packet, struct timeval ts,
 			unsigned int capture_len)

@@ -15,16 +15,17 @@
 #include <netinet/ip.h>
 #include <net/if.h>
 #include <netinet/if_ether.h>
+#include <netinet/udp.h>
 
 #include <pcap.h>
 
 #include "packet_parser.h"
 
-void dump_UDP_packet(const unsigned char *packet, struct timeval ts,
+void dump_udp_packet(const unsigned char *packet, struct timeval ts,
 			unsigned int capture_len)
 {
 	struct ip *ip;
-	struct UDP_hdr *udp;
+	struct udphdr *udp;
 	unsigned int IP_header_length;
 
 	/* For simplicity, we assume Ethernet encapsulation. */
@@ -67,13 +68,13 @@ void dump_UDP_packet(const unsigned char *packet, struct timeval ts,
 	packet += IP_header_length;
 	capture_len -= IP_header_length;
 
-	if (capture_len < sizeof(struct UDP_hdr))
+	if (capture_len < sizeof(struct udphdr))
 	{
 		too_short(ts, "UDP header");
 		return;
 	}
 
-	udp = (struct UDP_hdr*) packet;
+	udp = (struct udphdr*) packet;
 
 	printf("%s UDP src_port=%d dst_port=%d length=%d\n",
 		timestamp_string(ts),
@@ -102,7 +103,7 @@ int read_pcap(char* pcap_path)
 	 * some to read.
 	 */
 	while ((packet = pcap_next(pcap, &header)) != NULL)
-		dump_UDP_packet(packet, header.ts, header.caplen);
+		dump_udp_packet(packet, header.ts, header.caplen);
 
 	return 0;
 }

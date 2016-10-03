@@ -4,20 +4,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-/* We've included the UDP header struct for your ease of customization.
- * For your protocol, you might want to look at netinet/tcp.h for hints
- * on how to deal with single bits or fields that are smaller than a byte
- * in length.
- *
- * Per RFC 768, September, 1981.
- */
-struct UDP_hdr {
-    u_short uh_sport;       /* source port */
-    u_short uh_dport;       /* destination port */
-    u_short uh_ulen;        /* datagram length */
-    u_short uh_sum;         /* datagram checksum */
-};
-
 /* Returns a string representation of a timestamp. */
 const char *timestamp_string(struct timeval ts);
 
@@ -42,7 +28,7 @@ void too_short(struct timeval ts, const char *truncated_hdr);
  * packet.  However, the packet pointer only holds that much data, so
  * we have to be careful not to read beyond it.
  */
-void dump_UDP_packet(const unsigned char *packet, struct timeval ts,
+void dump_udp_packet(const unsigned char *packet, struct timeval ts,
             unsigned int capture_len);
 
 int read_pcap(char* pcap_path);

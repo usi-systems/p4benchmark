@@ -97,12 +97,24 @@ void parse_args(int argc, char **argv)
     }
 }
 
+void
+process_pkt(u_char *args, const struct pcap_pkthdr *header, const u_char *packet)
+{
+    int tv_offset = header->caplen - sizeof(struct timeval);
+    struct timeval* tv = (struct timeval*)(packet + tv_offset);
+    static struct timeval res;
+    timersub(&header->ts, tv, &res);
+
+    print_timeval("Latency", &res);
+}
+
+
 void *sniff(void *arg)
 {
     pcap_t *handle = (pcap_t*) arg;
     int ret;
     /* now we can set our callback function */
-    ret = pcap_loop(handle, config.count, got_packet, NULL);
+    ret = pcap_loop(handle, config.count, process_pkt, NULL);
     if (ret == -1)
         fprintf(stderr, "Error pcap_loop\n");
 

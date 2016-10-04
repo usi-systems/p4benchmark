@@ -2,13 +2,16 @@
 #include <string.h>
 #include <pthread.h>
 #include <time.h>
-
+#include <signal.h>
+#include <unistd.h>
 #include "capture.h"
 #include "parser.h"
 
 #define APP_DESC        "Benchmarking P4 programs"
 #define APP_COPYRIGHT   "Copyright (c) 2016 Universit{a} della Svizzera italiana"
 #define APP_DISCLAIMER  "THERE IS ABSOLUTELY NO WARRANTY FOR THIS PROGRAM."
+
+static int force_quit = 0;
 
 /*
  * app name/banner
@@ -97,10 +100,22 @@ void parse_args(int argc, char **argv)
 void *sniff(void *arg)
 {
     pcap_t *handle = (pcap_t*) arg;
+    int ret;
     /* now we can set our callback function */
-    pcap_loop(handle, config.count, got_packet, NULL);
+    ret = pcap_loop(handle, config.count, got_packet, NULL);
+    if (ret == -1)
+        fprintf(stderr, "Error pcap_loop\n");
 
+    force_quit = 1;
     return NULL;
+}
+
+void signal_handler(int signum)
+{
+    if (signum == SIGINT || signum == SIGTERM) {
+        printf("\n\nSignal %d received, preparing to exit...\n", signum);
+        force_quit = 1;
+    }
 }
 
 int main(int argc, char* argv[])
@@ -108,6 +123,9 @@ int main(int argc, char* argv[])
     print_app_banner(argv[0]);
     parse_args(argc, argv);
     pthread_t sniff_thread;
+
+    signal(SIGTERM, signal_handler);
+    signal(SIGINT, signal_handler);
 
     pcap_t *input_packets = read_pcap(config.pcap_file);
 
@@ -130,15 +148,22 @@ int main(int argc, char* argv[])
     while ((packet = pcap_next(input_packets, &header)) != NULL)
         for (i = 0 ; i < config.count; i++) {
             pcap_inject(handle, packet, header.caplen);
-            printf("Sent packet %.6d\n", i);
             nanosleep(&interval, &remaining);
         }
 
+    while(!force_quit) {
+        /* wait for SIGTERM or SIGINT */
+        sleep(1);
+    }
+
+    pcap_breakloop(handle);
 
     if (pthread_join(sniff_thread, NULL)) {
         fprintf(stderr, "Error joining thread\n");
         exit(EXIT_FAILURE);
     }
+
+    printf("Cleanup\n");
 
     /* cleanup */
     pcap_freecode(&fp);

@@ -12,7 +12,7 @@
 #define APP_DISCLAIMER  "THERE IS ABSOLUTELY NO WARRANTY FOR THIS PROGRAM."
 
 static int force_quit = 0;
-
+static int idle_timeout = 3;
 /*
  * app name/banner
  */
@@ -61,6 +61,14 @@ static void free_config() {
     free(config.filter_exp);
 }
 
+#define US_PER_S 1000000
+static struct {
+    unsigned long nb_packets;
+    unsigned long latency;
+    unsigned long total_packets;
+
+} stat;
+
 /* Parse the arguments given in the command line of the application */
 void parse_args(int argc, char **argv)
 {
@@ -97,6 +105,24 @@ void parse_args(int argc, char **argv)
     }
 }
 
+void average_latency()
+{
+    if (stat.nb_packets <= 0) {
+        if (idle_timeout-- > 0)
+            return;
+        /* quite after three attempts */
+        force_quit = 1;
+        return;
+    }
+    float avg_us = (float) stat.latency / stat.nb_packets;
+    printf("Latency Total %10lu / %5lu packets = %6.3f (us)\n",
+            stat.latency, stat.nb_packets, avg_us);
+    stat.total_packets += stat.nb_packets;
+    /* reset counter */
+    stat.nb_packets = 0;
+    stat.latency = 0;
+}
+
 void
 process_pkt(u_char *args, const struct pcap_pkthdr *header, const u_char *packet)
 {
@@ -105,11 +131,19 @@ process_pkt(u_char *args, const struct pcap_pkthdr *header, const u_char *packet
     static struct timeval res;
     timersub(&header->ts, tv, &res);
 
-    print_timeval("Latency", &res);
+    stat.latency += US_PER_S * res.tv_sec + res.tv_usec;
+    stat.nb_packets++;
+    // print_timeval("Latency", &res);
 }
 
+void final_report()
+{
+    float lost = (config.count - stat.total_packets) / (float)config.count;
+    printf("Sent: %10d\nRecv: %10lu\nLost: %10.3f\n",
+        config.count, stat.total_packets, lost);
+}
 
-void *sniff(void *arg)
+void* sniff(void *arg)
 {
     pcap_t *handle = (pcap_t*) arg;
     int ret;
@@ -130,11 +164,20 @@ void signal_handler(int signum)
     }
 }
 
+void* report_stat(void *arg)
+{
+    while(!force_quit) {
+        sleep(1);
+        average_latency();
+    }
+    return NULL;
+}
+
 int main(int argc, char* argv[])
 {
     print_app_banner(argv[0]);
     parse_args(argc, argv);
-    pthread_t sniff_thread;
+    pthread_t sniff_thread, stat_thread;
 
     signal(SIGTERM, signal_handler);
     signal(SIGINT, signal_handler);
@@ -145,7 +188,12 @@ int main(int argc, char* argv[])
     pcap_t *handle = init_dev(&fp, config.interface, config.filter_exp);
 
     if (pthread_create(&sniff_thread, NULL, sniff, handle) < 0) {
-        fprintf(stderr, "Error creating thread\n");
+        fprintf(stderr, "Error creating sniff thread\n");
+        exit(EXIT_FAILURE);
+    }
+
+    if (pthread_create(&stat_thread, NULL, report_stat, NULL) < 0) {
+        fprintf(stderr, "Error creating report thread\n");
         exit(EXIT_FAILURE);
     }
 
@@ -169,7 +217,7 @@ int main(int argc, char* argv[])
         int i;
         for (i = 0 ; i < config.count; i++) {
             gettimeofday(&tv, NULL);
-            print_timeval("Send", &tv);
+            // print_timeval("Send", &tv);
             memcpy(buf + header.caplen, &tv, sizeof(struct timeval));
             pcap_inject(handle, buf, buflen);
             nanosleep(&interval, &remaining);
@@ -187,9 +235,14 @@ int main(int argc, char* argv[])
         fprintf(stderr, "Error joining thread\n");
         exit(EXIT_FAILURE);
     }
+    if (pthread_join(stat_thread, NULL)) {
+        fprintf(stderr, "Error joining thread\n");
+        exit(EXIT_FAILURE);
+    }
+
+    final_report();
 
     printf("Cleanup\n");
-
     /* cleanup */
     pcap_freecode(&fp);
     pcap_close(handle);

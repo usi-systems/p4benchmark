@@ -22,7 +22,7 @@ import random
 import argparse
 
 import threading
-from scapy.all import sniff
+from scapy.all import sniff, wrpcap
 from scapy.all import Ether, IP, IPv6, TCP, UDP
 from scapy.all import Packet, ShortField, bind_layers
 
@@ -125,6 +125,8 @@ for i in range(args.nb_headers):
         pkt_ext = pkt_ext/P4Bench(field_0=0)
 
 pkt = pkt / pkt_ext
+
+wrpcap('test.pcap', pkt)
 
 port_map = {
     0: "veth0",

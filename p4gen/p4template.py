@@ -180,6 +180,30 @@ def cli_commands(fwd_tbl, ):
     """
     return read_template('template/commands/forward.txt', { 'fwd_tbl' : fwd_tbl})
 
+def add_rule(tbl_name, action, match_value, params=''):
+    """
+    This method returns the command for installing a rule to a table
+
+    :param tbl_name: the name of the table
+    :type tbl_name: str
+    :param match_value: the value to match on
+    :type match_value: str
+    :param action: the action that will be invoked if matched
+    :type action: str
+    :param params: the action parameters
+    :type params: str
+    :returns:  str -- the code in plain text
+    :raises: None
+
+    """
+    binding = {
+        'tbl_name': tbl_name,
+        'action' : action,
+        'match_value' : match_value,
+        'params': params
+    }
+    return read_template('template/commands/add_rule.txt', binding)
+
 def default_nop(tbl_name):
     """
     This method returns the command for installing the default action _nop for a table

@@ -73,9 +73,9 @@ def benchmark_memory(nb_registers, element_width, nb_elements, nb_operations):
     program += add_parser_without_select(header_type_name, header_name,
                     parser_state_name, 'ingress')
 
-    metadata = 'mem_metadata'
-    program += add_metadata_instance(header_type_name, metadata)
-    field = '%s.data' % metadata
+    # metadata = 'mem_metadata'
+    # program += add_metadata_instance(header_type_name, metadata)
+    field = '%s.data' % header_name
     index = '%s.index' % header_name
 
     program += nop_action()
@@ -83,7 +83,8 @@ def benchmark_memory(nb_registers, element_width, nb_elements, nb_operations):
     program += add_registers(nb_registers, element_width, nb_elements, nb_operations,
                     field, index)
 
-    matches = '%s.register_op : exact;' % header_name
+    match_field = '%s.register_op' % header_name
+    matches = '%s : exact;' % match_field
     actions = 'get_value; put_value; _nop;'
     table_name = 'register_table'
     program += add_table(table_name, matches, actions, 3)
@@ -97,6 +98,9 @@ def benchmark_memory(nb_registers, element_width, nb_elements, nb_operations):
 
     commands = ''
     commands += cli_commands(fwd_tbl)
+    commands += add_rule(table_name, '_nop', 0)
+    commands += add_rule(table_name, 'get_value', 1)
+    commands += add_rule(table_name, 'put_value', 2)
     with open ('%s/commands.txt' % program_name, 'w') as out:
         out.write(commands)
 

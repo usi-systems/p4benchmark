@@ -60,8 +60,9 @@ static struct {
 } config;
 
 struct app {
-    pcap_t* sniff;
     pthread_mutex_t mutex_stat;
+    pcap_t* sniff;
+    FILE *fp;
 };
 
 static void free_config() {
@@ -117,7 +118,7 @@ void parse_args(int argc, char **argv)
     }
 }
 
-void average_latency(pthread_mutex_t* mutex_stat)
+void average_latency(struct app* ctx)
 {
 
     if (stat.nb_packets <= 0) {
@@ -127,14 +128,14 @@ void average_latency(pthread_mutex_t* mutex_stat)
         force_quit = 1;
         return;
     }
-    pthread_mutex_lock(mutex_stat);
+    pthread_mutex_lock(&ctx->mutex_stat);
     float avg_us = (float) stat.latency / stat.nb_packets;
-    printf("%-8lu %-6.3f\n", stat.nb_packets, avg_us);
+    fprintf(ctx->fp, "%-8lu %-6.3f\n", stat.nb_packets, avg_us);
     stat.total_packets += stat.nb_packets;
     /* reset counter */
     stat.nb_packets = 0;
     stat.latency = 0;
-    pthread_mutex_unlock(mutex_stat);
+    pthread_mutex_unlock(&ctx->mutex_stat);
 }
 
 void
@@ -156,7 +157,7 @@ process_pkt(u_char *arg, const struct pcap_pkthdr *header, const u_char *packet)
 void final_report()
 {
     float lost = (config.count - stat.total_packets) / (float)config.count;
-    fprintf(stderr, "Sent: %10d\nRecv: %10lu\nLost: %10.3f\n",
+    fprintf(stderr, "%-10d %-10lu %-10.3f\n",
         config.count, stat.total_packets, lost);
 }
 
@@ -184,10 +185,10 @@ void signal_handler(int signum)
 
 void* report_stat(void *arg)
 {
-    pthread_mutex_t* mutex_stat = (pthread_mutex_t *)arg;
+    struct app* ctx = (struct app *)arg;
     while(!force_quit) {
         sleep(1);
-        average_latency(mutex_stat);
+        average_latency(ctx);
     }
     return NULL;
 }
@@ -211,6 +212,11 @@ int main(int argc, char* argv[])
     struct bpf_program fp;    
     app_ctx.sniff = init_dev(&fp, config.interface, config.filter_exp);
 
+    app_ctx.fp = fopen("stat.csv", "w");
+    if (app_ctx.fp == NULL) {
+        fprintf(stderr, "Error Opening file to write\n");
+        exit(EXIT_FAILURE);
+    }
     pthread_mutex_init(&app_ctx.mutex_stat, NULL);
 
     if (pthread_create(&sniff_thread, NULL, sniff, &app_ctx) < 0) {
@@ -218,7 +224,7 @@ int main(int argc, char* argv[])
         exit(EXIT_FAILURE);
     }
 
-    if (pthread_create(&stat_thread, NULL, report_stat, &app_ctx.mutex_stat) < 0) {
+    if (pthread_create(&stat_thread, NULL, report_stat, &app_ctx) < 0) {
         fprintf(stderr, "Error creating report thread\n");
         exit(EXIT_FAILURE);
     }
@@ -275,6 +281,7 @@ int main(int argc, char* argv[])
     pcap_close(app_ctx.sniff);
     pcap_close(input_packets);
     free_config();
+    fclose(app_ctx.fp);
     pthread_mutex_destroy(&app_ctx.mutex_stat);
     pthread_exit(NULL);
 

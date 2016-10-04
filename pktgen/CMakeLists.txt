@@ -7,11 +7,12 @@ set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -Wall -Wextra -Wno-unused-parameter
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 find_package(PCAP REQUIRED)
+find_package(Threads REQUIRED)
 
 message (STATUS "This is CMAKE_CXX_FLAGS " ${CMAKE_CXX_FLAGS})
 
 set (SRC src/capture.c src/parser.c src/main.c)
 
 add_executable (p4benchmark ${SRC})
-target_link_libraries (p4benchmark ${PCAP_LIBRARIES})
+target_link_libraries (p4benchmark ${PCAP_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
 set_target_properties (p4benchmark PROPERTIES COMPILE_FLAGS ${CMAKE_CXX_FLAGS})

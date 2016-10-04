@@ -248,10 +248,6 @@ init_dev(struct bpf_program *fp, char *dev, char* filter_exp)
         mask = 0;
     }
 
-    /* print capture info */
-    printf("Device: %s\n", dev);
-    printf("Filter expression: %s\n", filter_exp);
-
     /* open capture device */
     handle = pcap_open_live(dev, SNAP_LEN, 1, 1000, errbuf);
     if (handle == NULL) {

@@ -11,6 +11,9 @@
 #define SIZE_ETHERNET 14
 
 void
+print_timeval(char* msg, struct timeval *tv);
+
+void
 got_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *packet);
 
 void

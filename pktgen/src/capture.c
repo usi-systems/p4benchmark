@@ -13,6 +13,7 @@
 #include <netinet/ip.h>
 #include <netinet/tcp.h>
 
+#include <sys/time.h>
 #include "capture.h"
 
 
@@ -114,6 +115,27 @@ print_payload(const u_char *payload, int len)
 return;
 }
 
+void print_timeval(char* msg, struct timeval *tv) {
+    printf("%s<%ld.%06ld>\n", msg, (long int)(tv->tv_sec), (long int)(tv->tv_usec));
+}
+
+void handle_udp_packet(const struct pcap_pkthdr *header, const u_char *packet)
+{
+    int tv_offset = header->caplen - sizeof(struct timeval);
+    struct timeval* tv = (struct timeval*)(packet + tv_offset);
+    static struct timeval res;
+    timersub(&header->ts, tv, &res);
+
+    print_timeval("Latency", &res);
+}
+
+void
+print_ip_info(struct ip *ip)
+{
+    /* print source and destination IP addresses */
+    printf("       From: %s\n", inet_ntoa(ip->ip_src));
+    printf("         To: %s\n", inet_ntoa(ip->ip_dst));
+}
 /*
  * dissect/print packet
  */
@@ -150,10 +172,6 @@ got_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *packet)
         printf("   * Invalid IP header length: %u bytes\n", size_ip);
         return;
     }
-
-    /* print source and destination IP addresses */
-    printf("       From: %s\n", inet_ntoa(ip->ip_src));
-    printf("         To: %s\n", inet_ntoa(ip->ip_dst));
     
     /* determine protocol */    
     switch(ip->ip_p) {
@@ -161,7 +179,7 @@ got_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *packet)
             printf("   Protocol: TCP\n");
             break;
         case IPPROTO_UDP:
-            printf("   Protocol: UDP\n");
+            handle_udp_packet(header, packet);
             return;
         case IPPROTO_ICMP:
             printf("   Protocol: ICMP\n");

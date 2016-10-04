@@ -144,12 +144,25 @@ int main(int argc, char* argv[])
      */
      struct timespec interval = {0, config.interval}, remaining;
 
-    int i;
-    while ((packet = pcap_next(input_packets, &header)) != NULL)
+    packet = pcap_next(input_packets, &header);
+    if (packet == NULL) {
+        /* No packet to send. Quit */
+        force_quit = 1;
+    }
+    else {
+        struct timeval tv;
+        size_t buflen = header.caplen + sizeof(struct timeval);
+        unsigned char buf[buflen];
+        memcpy(buf, packet, header.caplen);
+        int i;
         for (i = 0 ; i < config.count; i++) {
-            pcap_inject(handle, packet, header.caplen);
+            gettimeofday(&tv, NULL);
+            print_timeval("Send", &tv);
+            memcpy(buf + header.caplen, &tv, sizeof(struct timeval));
+            pcap_inject(handle, buf, buflen);
             nanosleep(&interval, &remaining);
         }
+    }
 
     while(!force_quit) {
         /* wait for SIGTERM or SIGINT */

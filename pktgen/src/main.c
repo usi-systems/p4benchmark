@@ -60,6 +60,7 @@ static struct {
 } config;
 
 struct app {
+    int count;
     pthread_mutex_t mutex_stat;
     pcap_t* sniff;
     FILE *fp;
@@ -154,11 +155,11 @@ process_pkt(u_char *arg, const struct pcap_pkthdr *header, const u_char *packet)
     // print_timeval("Latency", &res);
 }
 
-void final_report()
+void final_report(int total_sent)
 {
-    float lost = (config.count - stat.total_packets) / (float)config.count;
+    float lost = (total_sent - stat.total_packets) / (float)total_sent;
     fprintf(stderr, "%-10d %-10lu %-10.3f\n",
-        config.count, stat.total_packets, lost);
+        total_sent, stat.total_packets, lost);
 }
 
 void* sniff(void *arg)
@@ -166,7 +167,7 @@ void* sniff(void *arg)
     struct app* app_ctx = (struct app*) arg;
     int ret;
     /* now we can set our callback function */
-    ret = pcap_loop(app_ctx->sniff, config.count, process_pkt,
+    ret = pcap_loop(app_ctx->sniff, app_ctx->count, process_pkt,
         (u_char*)&app_ctx->mutex_stat);
     if (ret == -1)
         fprintf(stderr, "Error pcap_loop\n");
@@ -193,6 +194,18 @@ void* report_stat(void *arg)
     return NULL;
 }
 
+int count_packets(char *path_to_trace)
+{
+    int counter = 0;
+    struct pcap_pkthdr header;
+    const unsigned char *packet;
+    pcap_t *trace = read_pcap(path_to_trace);
+    while ((packet = pcap_next(trace, &header)) != NULL) {
+        counter++;
+    }
+    return counter;
+}
+
 int main(int argc, char* argv[])
 {
     parse_args(argc, argv);
@@ -206,6 +219,7 @@ int main(int argc, char* argv[])
     signal(SIGINT, signal_handler);
 
     struct app app_ctx;
+    app_ctx.count = config.count * count_packets(config.pcap_file);
 
     pcap_t *input_packets = read_pcap(config.pcap_file);
 
@@ -236,12 +250,7 @@ int main(int argc, char* argv[])
      */
      struct timespec interval = {0, config.interval}, remaining;
 
-    packet = pcap_next(input_packets, &header);
-    if (packet == NULL) {
-        /* No packet to send. Quit */
-        force_quit = 1;
-    }
-    else {
+    while ((packet = pcap_next(input_packets, &header)) != NULL) {
         struct timeval tv;
         size_t buflen = header.caplen + sizeof(struct timeval);
         unsigned char buf[buflen];
@@ -272,7 +281,7 @@ int main(int argc, char* argv[])
         exit(EXIT_FAILURE);
     }
 
-    final_report();
+    final_report(app_ctx.count);
 
     if (config.log_level == APP_DEBUG)
         printf("Cleanup\n");

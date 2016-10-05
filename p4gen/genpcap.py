@@ -26,7 +26,7 @@ def add_layers(nb_fields, nb_headers):
 def get_parser_pcap(nb_fields, nb_headers, udp_dest_port, out_dir):
     pkt = add_eth_ip_udp_headers(udp_dest_port)
     pkt /= add_layers(nb_fields, nb_headers)
-    wrpcap('%s/parser.pcap' % out_dir, pkt)
+    wrpcap('%s/test.pcap' % out_dir, pkt)
 
 def get_state_pcap(udp_dest_port, out_dir):
 
@@ -45,11 +45,11 @@ def get_state_pcap(udp_dest_port, out_dir):
     get_data = pkt / MemTest(op=1, index=0, data=0)
 
     pkts = [ no_op, set_data, get_data ]
-    wrpcap('%s/state.pcap' % out_dir, pkts)
+    wrpcap('%s/test.pcap' % out_dir, pkts)
 
 def get_pipeline_pcap(out_dir):
     pkt = add_eth_ip_udp_headers(15432) / "PIPELINE"
-    wrpcap('%s/pipeline.pcap' % out_dir, pkt)
+    wrpcap('%s/test.pcap' % out_dir, pkt)
 
 def get_packetmod_pcap(nb_headers, nb_fields, mod_type, out_dir):
     pkt = Packet()
@@ -62,5 +62,5 @@ def get_packetmod_pcap(nb_headers, nb_fields, mod_type, out_dir):
         pkt = add_eth_ip_udp_headers(0x9091)
         pkt /= add_layers(nb_fields, nb_headers)
 
-    wrpcap('%s/pktmod.pcap' % out_dir, pkt)
+    wrpcap('%s/test.pcap' % out_dir, pkt)
 

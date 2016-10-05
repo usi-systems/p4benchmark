@@ -43,6 +43,7 @@ print_app_usage(const char *app_name)
     printf("Requires:\n");
     printf("-i    interface    Listen on <interface> for packets.\n");
     printf("-p    pcap_file    The pcap file for benchmarking the P4 program.\n");
+    printf("-o    output_fn    The output file name (stat).\n");
     printf("Options:\n");
     printf("-f    filter_exp   Capture packets that match filter expression.\n");
     printf("\n");
@@ -57,6 +58,7 @@ static struct {
     char* pcap_file;
     char* interface;
     char* filter_exp;
+    char* output_fn;
 } config;
 
 struct app {
@@ -70,6 +72,7 @@ static void free_config() {
     free(config.pcap_file);
     free(config.interface);
     free(config.filter_exp);
+    free(config.output_fn);
 }
 
 #define US_PER_S 1000000
@@ -88,7 +91,7 @@ void parse_args(int argc, char **argv)
     config.interval = 1000000; /* 1 ms */
     config.log_level = APP_INFO;
     /* Parse command line */
-    while ((opt = getopt(argc, argv, "c:i:p:f:t:l:")) != EOF) {
+    while ((opt = getopt(argc, argv, "c:i:p:f:t:l:o:")) != EOF) {
         switch (opt) {
         case 'c':
             config.count = atoi(optarg);
@@ -108,6 +111,9 @@ void parse_args(int argc, char **argv)
         case 'f':
             config.filter_exp = strdup(optarg);
             break;
+        case 'o':
+            config.output_fn = strdup(optarg);
+            break;
         default:
             print_app_usage(app_name);
             exit(EXIT_FAILURE);
@@ -117,6 +123,8 @@ void parse_args(int argc, char **argv)
         print_app_usage(app_name);
         exit(EXIT_FAILURE);
     }
+    if (config.output_fn == NULL)
+        config.output_fn = strdup("stat.csv");
 }
 
 void average_latency(struct app* ctx)
@@ -226,7 +234,12 @@ int main(int argc, char* argv[])
     struct bpf_program fp;    
     app_ctx.sniff = init_dev(&fp, config.interface, config.filter_exp);
 
-    app_ctx.fp = fopen("stat.csv", "w");
+    #ifdef WRITE_TO_FILE
+        app_ctx.fp = fopen(config.output_fn, "w");
+    #else
+        app_ctx.fp = stdout;
+    #endif
+
     if (app_ctx.fp == NULL) {
         fprintf(stderr, "Error Opening file to write\n");
         exit(EXIT_FAILURE);
@@ -290,7 +303,10 @@ int main(int argc, char* argv[])
     pcap_close(app_ctx.sniff);
     pcap_close(input_packets);
     free_config();
-    fclose(app_ctx.fp);
+
+    #ifdef WRITE_TO_FILE
+        fclose(app_ctx.fp);
+    #endif
     pthread_mutex_destroy(&app_ctx.mutex_stat);
     pthread_exit(NULL);
 

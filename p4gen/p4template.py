@@ -214,7 +214,7 @@ def default_nop(tbl_name):
     :raises: None
 
     """
-    return add_default_rule(tbl_name, '_nop;')
+    return add_default_rule(tbl_name, '_nop')
 
 def add_header_field(field_name, field_width):
     """

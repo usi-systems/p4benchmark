@@ -16,7 +16,9 @@ features = {
     0 : 'PARSER',
     1 : 'STATE',
     2 : 'PIPELINE',
-    3 : 'PACKET_MOD',
+    3 : 'PACKET_ADD',
+    4 : 'PACKET_RM',
+    5 : 'PACKET_MOD',
 }
 
 class PacketQueue:
@@ -142,6 +144,8 @@ if __name__=='__main__':
         m = MemTest(op=args.register_op, index=args.register_index,
                 data=args.register_value)
         pkt = pkt / m
+    elif features[args.feature] == 'PACKET_ADD':
+        pkt["UDP"].dport = random.randint(1024, 65535)
 
 
     wrpcap('test.pcap', pkt)

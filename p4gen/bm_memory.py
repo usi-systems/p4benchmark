@@ -3,7 +3,7 @@ from subprocess import call
 from pkg_resources import resource_filename
 
 from p4template import *
-
+import genpcap
 
 def add_registers(nb_registers, element_width, nb_elements, nb_operations,
         field, index):
@@ -54,9 +54,10 @@ def benchmark_memory(nb_registers, element_width, nb_elements, nb_operations):
     :returns: bool -- True if there is no error
 
     """
-    program_name = 'output'
-    if not os.path.exists(program_name):
-       os.makedirs(program_name)
+    udp_dport = 0x9091
+    out_dir = 'output'
+    if not os.path.exists(out_dir):
+       os.makedirs(out_dir)
 
     fwd_tbl = 'forward_table'
 
@@ -68,7 +69,7 @@ def benchmark_memory(nb_registers, element_width, nb_elements, nb_operations):
     field_dec += add_header_field('index', 12)
     field_dec += add_header_field('data', element_width)
 
-    program += udp(select_case(0x9091, parser_state_name))
+    program += udp(select_case(udp_dport, parser_state_name))
     program += add_header(header_type_name, field_dec)
     program += add_parser_without_select(header_type_name, header_name,
                     parser_state_name, 'ingress')
@@ -93,7 +94,7 @@ def benchmark_memory(nb_registers, element_width, nb_elements, nb_operations):
     program += forward_table()
     program += control(fwd_tbl, applies)
 
-    with open ('%s/main.p4' % program_name, 'w') as out:
+    with open ('%s/main.p4' % out_dir, 'w') as out:
         out.write(program)
 
     commands = ''
@@ -101,10 +102,11 @@ def benchmark_memory(nb_registers, element_width, nb_elements, nb_operations):
     commands += add_rule(table_name, '_nop', 0)
     commands += add_rule(table_name, 'get_value', 1)
     commands += add_rule(table_name, 'put_value', 2)
-    with open ('%s/commands.txt' % program_name, 'w') as out:
+    with open ('%s/commands.txt' % out_dir, 'w') as out:
         out.write(commands)
 
-    call(['cp', resource_filename(__name__, 'template/run_switch.sh'), program_name])
-    call(['cp', resource_filename(__name__, 'template/run_test.py'), program_name])
+    call(['cp', resource_filename(__name__, 'template/run_switch.sh'), out_dir])
+    call(['cp', resource_filename(__name__, 'template/run_test.py'), out_dir])
 
+    genpcap.get_state_pcap(udp_dport, out_dir)
     return True

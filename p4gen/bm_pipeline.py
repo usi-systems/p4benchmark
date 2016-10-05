@@ -3,6 +3,7 @@ from subprocess import call
 from pkg_resources import resource_filename
 
 from p4template import *
+import genpcap
 
 def benchmark_pipeline(nb_tables, table_size):
     """
@@ -16,9 +17,9 @@ def benchmark_pipeline(nb_tables, table_size):
 
     """
 
-    program_name = 'output'
-    if not os.path.exists(program_name):
-       os.makedirs(program_name)
+    out_dir = 'output'
+    if not os.path.exists(out_dir):
+       os.makedirs(out_dir)
 
     fwd_tbl = 'forward_table'
 
@@ -36,14 +37,15 @@ def benchmark_pipeline(nb_tables, table_size):
 
     program += control(fwd_tbl, applies)
 
-    with open ('%s/main.p4' % program_name, 'w') as out:
+    with open ('%s/main.p4' % out_dir, 'w') as out:
         out.write(program)
 
     commands += cli_commands(fwd_tbl)
-    with open ('%s/commands.txt' % program_name, 'w') as out:
+    with open ('%s/commands.txt' % out_dir, 'w') as out:
         out.write(commands)
 
-    call(['cp', resource_filename(__name__, 'template/run_switch.sh'), program_name])
-    call(['cp', resource_filename(__name__, 'template/run_test.py'), program_name])
+    call(['cp', resource_filename(__name__, 'template/run_switch.sh'), out_dir])
+    call(['cp', resource_filename(__name__, 'template/run_test.py'), out_dir])
+    genpcap.get_pipeline_pcap(out_dir)
 
     return True

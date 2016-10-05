@@ -2,6 +2,7 @@ import os
 from subprocess import call
 from pkg_resources import resource_filename
 from p4template import *
+import genpcap
 
 class ParseNode():
     def __init__(self, parent=None, node_name='', code=''):
@@ -158,4 +159,5 @@ def benchmark_parser(nb_headers, nb_fields):
     program  = add_headers_and_parsers(nb_headers, nb_fields)
     program = add_forwarding_table(output_dir, program)
     write_output(output_dir, program)
+    genpcap.get_parser_pcap(nb_fields, nb_headers, 0x9091, output_dir)
     return True

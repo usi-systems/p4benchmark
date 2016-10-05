@@ -4,6 +4,7 @@ from pkg_resources import resource_filename
 
 from p4template import *
 from bm_parser import add_headers_and_parsers
+import genpcap
 
 def benchmark_add_header_overhead(action_name, nb_header):
     instruction_set =''
@@ -45,9 +46,9 @@ def benchmark_modification(nb_headers, nb_fields, mod_type):
     :returns: bool -- True if there is no error
 
     """
-    program_name = 'output'
-    if not os.path.exists(program_name):
-       os.makedirs(program_name)
+    out_dir = 'output'
+    if not os.path.exists(out_dir):
+       os.makedirs(out_dir)
 
     fwd_tbl = 'forward_table'
 
@@ -71,15 +72,17 @@ def benchmark_modification(nb_headers, nb_fields, mod_type):
 
     program += control(fwd_tbl, apply_table(table_name))
 
-    with open ('%s/main.p4' % program_name, 'w') as out:
+    with open ('%s/main.p4' % out_dir, 'w') as out:
         out.write(program)
 
     commands = add_default_rule(table_name, action_name)
     commands += cli_commands(fwd_tbl)
-    with open ('%s/commands.txt' % program_name, 'w') as out:
+    with open ('%s/commands.txt' % out_dir, 'w') as out:
         out.write(commands)
 
-    call(['cp', resource_filename(__name__, 'template/run_switch.sh'), program_name])
-    call(['cp', resource_filename(__name__, 'template/run_test.py'), program_name])
+    call(['cp', resource_filename(__name__, 'template/run_switch.sh'), out_dir])
+    call(['cp', resource_filename(__name__, 'template/run_test.py'), out_dir])
+
+    genpcap.get_packetmod_pcap(nb_headers, nb_fields, mod_type, out_dir)
 
     return True

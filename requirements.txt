@@ -1,3 +1,4 @@
 sphinx
 sphinx-autobuild
 nose
+nose-parameterized

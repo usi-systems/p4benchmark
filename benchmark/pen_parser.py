@@ -121,9 +121,10 @@ class BenchmarkParser():
         res = 0.0
         with open('%s/loss.csv' % self.directory, 'r') as f:
             for line in f:
-                data = shlex.split(line)
-                assert (len(data) == 3)
-                res = float(data[2])
+		pass
+            data = shlex.split(line)
+            assert (len(data) == 3)
+            res = float(data[2])
         return (res != 0.0)
 
 

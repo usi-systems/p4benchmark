@@ -1,10 +1,11 @@
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python
 
 import os
 from subprocess import call, Popen, PIPE
 import shlex
 import time
 import p4gen
+import argparse
 
 class BenchmarkParser():
 
@@ -126,10 +127,15 @@ class BenchmarkParser():
         return (res != 0.0)
 
 
+def main():
+    parser = argparse.ArgumentParser(description='P4 Benchmark')
+    parser.add_argument('-n', '--nb-headers', default=5, type=int,
+                        help='number of headers from start')
+    args = parser.parse_args()
 
-if __name__=='__main__':
-    nb_headers = 5
-    while(nb_headers <= 5):
+    nb_headers = args.nb_headers
+
+    while(nb_headers <= 40):
         offer_load = 1000
         p = BenchmarkParser(nb_headers, offer_load)
         p.start()
@@ -139,3 +145,6 @@ if __name__=='__main__':
             p.start()
 
         nb_headers += 5
+
+if __name__=='__main__':
+    main()

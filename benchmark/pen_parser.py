@@ -64,7 +64,7 @@ class BenchmarkParser():
                         print out
                         if "Could not" in out:
                             print "Retry in 1 second"
-                            sleep(1)
+                            time.sleep(1)
                             return self.add_rules(json_path, port_number, commands, retries-1)
                         elif  "DUPLICATE_ENTRY" in out:
                             pass

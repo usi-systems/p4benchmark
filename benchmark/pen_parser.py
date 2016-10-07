@@ -8,7 +8,7 @@ import p4gen
 
 class BenchmarkParser():
 
-    def __init__(self, nb_header, ipg):
+    def __init__(self, nb_header, offer_load):
         assert os.environ.get('P4BENCHMARK_ROOT')
         assert os.environ.get('PYTHONPATH')
         pypath = os.environ.get('PYTHONPATH')
@@ -20,11 +20,12 @@ class BenchmarkParser():
         self.pktgen = os.path.join(p4bench, 'pktgen/build/p4benchmark')
         self.nb_packets = 100000
         self.nb_header = nb_header
-        self.ipg = ipg
+        self.offer_load = offer_load
+        self.ipg = int(10**9 / offer_load)
         self.log_level = ''
 
     def start(self):
-        self.directory = 'result/parser/ipg/{0}/{1}'.format(self.nb_header, self.ipg)
+        self.directory = 'result/parser/offer_load/{0}/{1}'.format(self.nb_header, self.offer_load)
         if not os.path.exists(self.directory):
             os.makedirs(self.directory)
         ret = p4gen.bm_parser.benchmark_parser(self.nb_header, 1)
@@ -106,6 +107,7 @@ class BenchmarkParser():
         out_file = '{0}/bmv2.log'.format(self.directory)
         with open(out_file, 'w') as out:
             out.write('Number of packets: %d\n' % self.nb_packets)
+            out.write('offered load:  %d\n' % self.offer_load)
             out.write('Inter-packet gap:  %d\n' % self.ipg)
             self.p = Popen(args, stdout=out, stderr=out, shell=False)
         assert (self.p.poll() == None)
@@ -121,19 +123,19 @@ class BenchmarkParser():
                 data = shlex.split(line)
                 assert (len(data) == 3)
                 res = float(data[2])
-        return (res != 0.0) 
+        return (res != 0.0)
 
 
 
 if __name__=='__main__':
     nb_headers = 5
-    while(nb_headers <= 40):
-        starting_speed = 300000
-        p = BenchmarkParser(nb_headers, starting_speed)
+    while(nb_headers <= 5):
+        offer_load = 1000
+        p = BenchmarkParser(nb_headers, offer_load)
         p.start()
         while (p.has_lost_packet() != True):
-            starting_speed = int(starting_speed / 1.5)
-            p = BenchmarkParser(nb_headers, starting_speed)
+            offer_load += 1000
+            p = BenchmarkParser(nb_headers, offer_load)
             p.start()
 
         nb_headers += 5

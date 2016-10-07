@@ -71,8 +71,6 @@ def add_forwarding_table(output_dir, program):
     return program
 
 def write_output(output_dir, program):
-    if not os.path.exists(output_dir):
-       os.makedirs(output_dir)
     with open ('%s/main.p4' % output_dir, 'w') as out:
         out.write(program)
     call(['cp', resource_filename(__name__, 'template/run_switch.sh'), output_dir])
@@ -156,6 +154,8 @@ def benchmark_parser(nb_headers, nb_fields):
 
     """
     output_dir = 'output'
+    if not os.path.exists(output_dir):
+       os.makedirs(output_dir)
     program  = add_headers_and_parsers(nb_headers, nb_fields)
     program = add_forwarding_table(output_dir, program)
     write_output(output_dir, program)

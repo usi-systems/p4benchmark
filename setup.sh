@@ -6,7 +6,7 @@ sudo apt-get update -y
 
 # install behavioral-model dependencies
 sudo apt-get install -y git autoconf python-pip build-essential python-dev \
-    cmake libjudy-dev libgmp-dev libpcap-dev mktemp libffi-dev
+    cmake libjudy-dev libgmp-dev libpcap-dev mktemp libffi-dev r-base-core
 
 git submodule init
 git submodule update

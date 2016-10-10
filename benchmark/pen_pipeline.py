@@ -25,12 +25,12 @@ class BenchmarkPipelineDepth():
         self.offer_load = offer_load
         self.ipg = int(10**9 / offer_load)
         self.log_level = ''
-
-    def start(self):
         self.directory = 'result/pipeline/size-{0}/{1}/{2}'.format(self.tbl_size,
                             self.nb_tables, self.offer_load)
         if not os.path.exists(self.directory):
             os.makedirs(self.directory)
+
+    def start(self):
         ret = p4gen.bm_pipeline.benchmark_pipeline(self.nb_tables, self.tbl_size)
         assert (ret == True)
         # run switch
@@ -121,7 +121,7 @@ class BenchmarkPipelineDepth():
         res = 0.0
         with open('%s/loss.csv' % self.directory, 'r') as f:
             for line in f:
-		pass
+                pass
             data = shlex.split(line)
             assert (len(data) == 3)
             res = float(data[2])

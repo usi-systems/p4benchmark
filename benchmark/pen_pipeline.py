@@ -57,7 +57,7 @@ class BenchmarkPipelineDepth(P4Benchmark):
 
     def run_packet_generator(self):
         cmd = 'sudo {0} -p {1} -i veth4 -c {2} -t {3}'.format(self.pktgen,
-            'output/test.pcap', self.nb_packets, self.ipg)
+            'output/test.pcap', self.nb_packets, self.offer_load)
         print cmd
         args = shlex.split(cmd)
         out_file = '{0}/latency.csv'.format(self.directory)
@@ -93,7 +93,6 @@ class BenchmarkPipelineDepth(P4Benchmark):
         with open(out_file, 'w') as out:
             out.write('Number of packets: %d\n' % self.nb_packets)
             out.write('offered load:  %d\n' % self.offer_load)
-            out.write('Inter-packet gap:  %d\n' % self.ipg)
             self.p = Popen(args, stdout=out, stderr=out, shell=False)
         assert (self.p.poll() == None)
         # wait for the switch to start
@@ -123,13 +122,13 @@ def main():
     nb_tables = args.nb_tables
 
     while(nb_tables <= 40):
-        offer_load = 1000
+        offer_load = 100000
         p = BenchmarkPipelineDepth(nb_tables, args.tbl_size, offer_load)
         # compile
         p.compile_p4_program()
         p.start()
         while (p.has_lost_packet() != True):
-            offer_load += 1000
+            offer_load += 100000
             p = BenchmarkPipelineDepth(nb_tables, args.tbl_size, offer_load)
             p.start()
 

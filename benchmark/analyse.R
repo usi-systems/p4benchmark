@@ -9,8 +9,8 @@ dirs = list.dirs(args[1])
 
 read_latency <- function(file_path, variable, offer_load, packet_lost) {
     df <- read.csv(file_path, sep='', header=FALSE, col.names=c('throughput', 'latency'))
-    # cut the first and the last five rows
-    # df <- tail(df,-1)
+    # cut the first and the last rows
+    df <- tail(df,-1)
     df <- head(df,-1)
     df$variable <- as.numeric(variable)
     df$offer_load <- as.numeric(offer_load)
@@ -46,7 +46,11 @@ for (d in dirs) {
 # Find mean throughput and latency
 mydf <-aggregate(dfs[1:2], by=list(var=dfs$variable, load=dfs$offer_load,
                 lost=dfs$packet_lost), FUN=mean)
-
+print(mydf)
+summary = sprintf("%s/summary.csv", args[1])
+write.table(mydf, file=summary, quote=FALSE, row.names=FALSE)
 # Find maximum throughput
 final <-aggregate(mydf[4:5], by=list(var=mydf$var, lost=mydf$lost), FUN=max)
 print(final)
+result = sprintf("%s/result.csv", args[1])
+write.table(final, file=result, quote=FALSE, row.names=FALSE)

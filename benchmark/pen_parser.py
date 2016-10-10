@@ -7,71 +7,18 @@ import time
 import p4gen
 import argparse
 
-class BenchmarkParser():
+from benchmark import P4Benchmark
+
+class BenchmarkParser(P4Benchmark):
 
     def __init__(self, nb_header, offer_load):
-        assert os.environ.get('P4BENCHMARK_ROOT')
-        assert os.environ.get('PYTHONPATH')
-        pypath = os.environ.get('PYTHONPATH')
-        p4bench = os.environ.get('P4BENCHMARK_ROOT')
-        bmv2 = os.path.join(p4bench, 'behavioral-model')
-        self.p4c = os.path.join(p4bench, 'p4c-bm/p4c_bm/__main__.py')
-        self.switch_path = os.path.join(bmv2, 'targets/simple_switch/simple_switch')
-        self.cli_path = os.path.join(bmv2, 'tools/runtime_CLI.py')
-        self.pktgen = os.path.join(p4bench, 'pktgen/build/p4benchmark')
-        self.nb_packets = 100000
+        parent_dir = 'result/parser/'
+        directory = '{0}/{1}/{2}'.format(parent_dir, nb_header, offer_load)
+        super(BenchmarkParser, self).__init__(parent_dir, directory, offer_load)
         self.nb_header = nb_header
-        self.offer_load = offer_load
-        self.ipg = int(10**9 / offer_load)
-        self.log_level = ''
-
-    def start(self):
-        self.directory = 'result/parser/offer_load/{0}/{1}'.format(self.nb_header, self.offer_load)
+        self.nb_field = 1
         if not os.path.exists(self.directory):
             os.makedirs(self.directory)
-        ret = p4gen.bm_parser.benchmark_parser(self.nb_header, 1)
-        assert (ret == True)
-        # compile
-        self.compile_p4_program()
-        # run switch
-        self.run_behavioral_switch()
-        # run packet generator
-        self.run_packet_generator()
-        # stop the switch
-        self.tearDown()
-
-    def tearDown(self):
-        cmd = 'sudo pkill lt-simple_swi'
-        args = shlex.split(cmd)
-        p = Popen(args)
-        out, err = p.communicate()
-        if out:
-            print out
-        if err:
-            print err
-        self.p.wait()
-        assert (self.p.poll() != None)
-        time.sleep(5)
-
-    def add_rules(self, json_path, commands, retries):
-        if retries > 0:
-            cmd = [self.cli_path, '--json', json_path]
-            if os.path.isfile(commands):
-                with open(commands, "r") as f:
-                    p = Popen(cmd, stdin=f, stdout=PIPE, stderr=PIPE)
-                    out, err = p.communicate()
-                    if out:
-                        print out
-                        if "Could not" in out:
-                            print "Retry in 1 second"
-                            time.sleep(1)
-                            return self.add_rules(json_path, port_number, commands, retries-1)
-                        elif  "DUPLICATE_ENTRY" in out:
-                            pass
-                    if err:
-                        print err
-                        time.sleep(1)
-                        return self.add_rules(json_path, port_number, commands, retries-1)
 
     def run_packet_generator(self):
         cmd = 'sudo {0} -p {1} -i veth4 -c {2} -t {3}'.format(self.pktgen,
@@ -88,6 +35,8 @@ class BenchmarkParser():
         err.close()
 
     def compile_p4_program(self):
+        ret = p4gen.bm_parser.benchmark_parser(self.nb_header, self.nb_field)
+        assert (ret == True)
         prog = 'main'
         json_path = 'output/%s.json' % prog
         out_file = '{0}/p4c.log'.format(self.directory)
@@ -117,16 +66,6 @@ class BenchmarkParser():
         # insert rules: retry 3 times if not succeed
         self.add_rules(json_path, commands, 3)
 
-    def has_lost_packet(self):
-        res = 0.0
-        with open('%s/loss.csv' % self.directory, 'r') as f:
-            for line in f:
-                pass
-            data = shlex.split(line)
-            assert (len(data) == 3)
-            res = float(data[2])
-        return (res != 0.0)
-
 
 def main():
     parser = argparse.ArgumentParser(description='P4 Benchmark')
@@ -146,6 +85,7 @@ def main():
             p.start()
 
         nb_headers += 5
+    p.run_analyser()
 
 if __name__=='__main__':
     main()

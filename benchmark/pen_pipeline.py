@@ -7,38 +7,20 @@ import time
 import p4gen
 import argparse
 
-class BenchmarkPipelineDepth():
+from benchmark import P4Benchmark
+
+class BenchmarkPipelineDepth(P4Benchmark):
 
     def __init__(self, nb_tables, tbl_size, offer_load):
-        assert os.environ.get('P4BENCHMARK_ROOT')
-        assert os.environ.get('PYTHONPATH')
-        pypath = os.environ.get('PYTHONPATH')
-        p4bench = os.environ.get('P4BENCHMARK_ROOT')
-        bmv2 = os.path.join(p4bench, 'behavioral-model')
-        self.p4c = os.path.join(p4bench, 'p4c-bm/p4c_bm/__main__.py')
-        self.switch_path = os.path.join(bmv2, 'targets/simple_switch/simple_switch')
-        self.cli_path = os.path.join(bmv2, 'tools/runtime_CLI.py')
-        self.pktgen = os.path.join(p4bench, 'pktgen/build/p4benchmark')
-        self.nb_packets = 100000
         self.nb_tables = nb_tables
         self.tbl_size = tbl_size
-        self.offer_load = offer_load
-        self.ipg = int(10**9 / offer_load)
-        self.log_level = ''
-        self.directory = 'result/pipeline/size-{0}/{1}/{2}'.format(self.tbl_size,
-                            self.nb_tables, self.offer_load)
+        parent_dir = 'result/pipeline'
+        directory = '{0}/size-{1}/{2}/{3}'.format(parent_dir, self.tbl_size,
+                            self.nb_tables, offer_load)
+        super(BenchmarkPipelineDepth, self).__init__(parent_dir, directory, offer_load)
+
         if not os.path.exists(self.directory):
             os.makedirs(self.directory)
-
-    def start(self):
-        ret = p4gen.bm_pipeline.benchmark_pipeline(self.nb_tables, self.tbl_size)
-        assert (ret == True)
-        # run switch
-        self.run_behavioral_switch()
-        # run packet generator
-        self.run_packet_generator()
-        # stop the switch
-        self.tearDown()
 
     def tearDown(self):
         cmd = 'sudo pkill lt-simple_swi'
@@ -88,6 +70,8 @@ class BenchmarkPipelineDepth():
         err.close()
 
     def compile_p4_program(self):
+        ret = p4gen.bm_pipeline.benchmark_pipeline(self.nb_tables, self.tbl_size)
+        assert (ret == True)
         prog = 'main'
         json_path = 'output/%s.json' % prog
         out_file = '{0}/p4c.log'.format(self.directory)
@@ -118,14 +102,14 @@ class BenchmarkPipelineDepth():
         self.add_rules(json_path, commands, 3)
 
     def has_lost_packet(self):
-        res = 0.0
         with open('%s/loss.csv' % self.directory, 'r') as f:
             for line in f:
                 pass
             data = shlex.split(line)
             assert (len(data) == 3)
-            res = float(data[2])
-        return (res != 0.0)
+            sent = float(data[0])
+            recv = float(data[1])
+        return (recv < sent)
 
 
 def main():
@@ -150,6 +134,7 @@ def main():
             p.start()
 
         nb_tables += 5
+    p.run_analyser()
 
 if __name__=='__main__':
     main()

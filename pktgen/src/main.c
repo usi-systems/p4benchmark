@@ -4,6 +4,7 @@
 #include <time.h>
 #include <signal.h>
 #include <unistd.h>
+#include <stdlib.h>
 #include "capture.h"
 #include "parser.h"
 
@@ -53,7 +54,7 @@ print_app_usage(const char *app_name)
 
 static struct {
     int   count;
-    int   interval;
+    int   bps;
     int   log_level;
     char* pcap_file;
     char* interface;
@@ -88,7 +89,7 @@ void parse_args(int argc, char **argv)
     int opt;
     const char *app_name = argv[0];
     config.count = 1;
-    config.interval = 1000000; /* 1 ms */
+    config.bps = 1;
     config.log_level = APP_INFO;
     /* Parse command line */
     while ((opt = getopt(argc, argv, "c:i:p:f:t:l:o:")) != EOF) {
@@ -97,7 +98,7 @@ void parse_args(int argc, char **argv)
             config.count = atoi(optarg);
             break;
         case 't':
-            config.interval = atoi(optarg);
+            config.bps = atoi(optarg);
             break;
         case 'l':
             config.log_level = atoi(optarg);
@@ -261,20 +262,55 @@ int main(int argc, char* argv[])
     /* Now just loop through extracting packets as long as we have
      * some to read.
      */
-     struct timespec interval = {0, config.interval}, remaining;
+
+    #define TIME_WINDOW_MS 1L
+    unsigned int max_bytes_per_window = ((config.bps * TIME_WINDOW_MS) / 1000L);
+
+    struct timespec window_start_time;
+
+    size_t bytes_sent_in_window = 0;
+    clock_gettime(CLOCK_REALTIME, &window_start_time);
 
     while ((packet = pcap_next(input_packets, &header)) != NULL) {
         struct timeval tv;
         size_t buflen = header.caplen + sizeof(struct timeval);
+        fprintf(stderr, "packet-size %zu\n", buflen);
         unsigned char buf[buflen];
         memcpy(buf, packet, header.caplen);
         int i;
         for (i = 0 ; i < config.count; i++) {
             gettimeofday(&tv, NULL);
-            // print_timeval("Send", &tv);
             memcpy(buf + header.caplen, &tv, sizeof(struct timeval));
             pcap_inject(app_ctx.sniff, buf, buflen);
-            nanosleep(&interval, &remaining);
+            bytes_sent_in_window += buflen;
+
+            if (bytes_sent_in_window >= max_bytes_per_window) {
+                struct timespec now;
+                struct timespec thresh;
+                thresh.tv_sec = window_start_time.tv_sec;
+                thresh.tv_nsec = window_start_time.tv_nsec;
+                thresh.tv_nsec += TIME_WINDOW_MS * 1000000;
+                if (thresh.tv_nsec > 1000000000L) {
+                    thresh.tv_sec += 1;
+                    thresh.tv_nsec -= 1000000000L;
+                }
+                clock_gettime(CLOCK_REALTIME, &now);
+                if (now.tv_sec < thresh.tv_sec ||
+                    (now.tv_sec == thresh.tv_sec && now.tv_nsec < thresh.tv_nsec)) {
+                    struct timespec remaining;
+                    remaining.tv_sec = thresh.tv_sec - now.tv_sec;
+                    if (thresh.tv_nsec >= now.tv_nsec) {
+                        remaining.tv_nsec = thresh.tv_nsec - now.tv_nsec;
+                    } else {
+                        remaining.tv_nsec = 1000000000L + thresh.tv_nsec - now.tv_nsec;
+                        remaining.tv_sec -= 1;
+                    }
+                        nanosleep(&remaining, NULL);
+                }
+                // Reset counters and timestamp for next window
+                bytes_sent_in_window = 0;
+                clock_gettime(CLOCK_REALTIME, &window_start_time);
+            }
         }
     }
 

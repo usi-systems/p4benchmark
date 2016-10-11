@@ -1,5 +1,0 @@
-table_set_default ip_lookup _drop
-table_set_default neighbor _nop
-table_add ip_lookup forward 10.0.0.0/24 => 1 10.0.0.1
-table_add ip_lookup forward 10.0.1.0/24 => 2 10.0.1.1
-table_add neighbor rewrite_l2 10.0.0.1  => 1a:2b:3c:4d:5e:6f 6a:5b:4c:3d:2e:1f

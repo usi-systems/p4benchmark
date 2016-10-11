@@ -1,4 +1,0 @@
-table_set_default paxos_tbl _nop
-table_add paxos_tbl set_state 2 =>
-table_add paxos_tbl get_states 6 =>
-table_set_default circle repeat

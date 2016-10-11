@@ -1,6 +1,0 @@
-table_set_default forward_tbl _drop
-table_add forward_tbl forward 1 => 1
-table_add forward_tbl forward 2 => 2
-table_add IPFIB ip_to_label 10.0.0.0/8 => 23 12.34.56.78
-table_add LFIB untag 16 => 123.45.8.76
-table_add LFIB label_to_ip 23 => 10.0.0.3

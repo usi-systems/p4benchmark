@@ -1,2 +1,0 @@
-table_set_default forward_tbl forward
-table_add forward_tbl forward 0 _drop =>

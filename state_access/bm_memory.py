@@ -2,8 +2,9 @@ import os
 from subprocess import call
 from pkg_resources import resource_filename
 
-from p4template import *
-import genpcap
+from p4gen.genpcap import get_state_pcap
+from p4gen.p4template import *
+from p4gen import copy_scripts
 
 def add_registers(nb_registers, element_width, nb_elements, nb_operations,
         field, index):
@@ -104,9 +105,6 @@ def benchmark_memory(nb_registers, element_width, nb_elements, nb_operations):
     commands += add_rule(table_name, 'put_value', 2)
     with open ('%s/commands.txt' % out_dir, 'w') as out:
         out.write(commands)
-
-    call(['cp', resource_filename(__name__, 'template/run_switch.sh'), out_dir])
-    call(['cp', resource_filename(__name__, 'template/run_test.py'), out_dir])
-
-    genpcap.get_state_pcap(udp_dport, out_dir)
+    copy_scripts(out_dir)
+    get_state_pcap(udp_dport, out_dir)
     return True

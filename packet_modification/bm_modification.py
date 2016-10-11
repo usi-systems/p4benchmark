@@ -1,10 +1,10 @@
 import os
 from subprocess import call
 from pkg_resources import resource_filename
-
-from p4template import *
-from bm_parser import add_headers_and_parsers
-import genpcap
+from parsing.bm_parser import add_headers_and_parsers
+from p4gen.genpcap import get_packetmod_pcap
+from p4gen import copy_scripts
+from p4gen.p4template import *
 
 def benchmark_add_header_overhead(action_name, nb_header):
     instruction_set =''
@@ -79,10 +79,7 @@ def benchmark_modification(nb_headers, nb_fields, mod_type):
     commands += cli_commands(fwd_tbl)
     with open ('%s/commands.txt' % out_dir, 'w') as out:
         out.write(commands)
-
-    call(['cp', resource_filename(__name__, 'template/run_switch.sh'), out_dir])
-    call(['cp', resource_filename(__name__, 'template/run_test.py'), out_dir])
-
-    genpcap.get_packetmod_pcap(nb_headers, nb_fields, mod_type, out_dir)
+    copy_scripts(out_dir)
+    get_packetmod_pcap(nb_headers, nb_fields, mod_type, out_dir)
 
     return True

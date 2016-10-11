@@ -1,9 +1,9 @@
 import os
 from subprocess import call
 from pkg_resources import resource_filename
-
-from p4template import *
-import genpcap
+from p4gen.genpcap import get_pipeline_pcap
+from p4gen import copy_scripts
+from p4gen.p4template import *
 
 def benchmark_pipeline(nb_tables, table_size):
     """
@@ -43,9 +43,8 @@ def benchmark_pipeline(nb_tables, table_size):
     commands += cli_commands(fwd_tbl)
     with open ('%s/commands.txt' % out_dir, 'w') as out:
         out.write(commands)
+    copy_scripts(out_dir)
 
-    call(['cp', resource_filename(__name__, 'template/run_switch.sh'), out_dir])
-    call(['cp', resource_filename(__name__, 'template/run_test.py'), out_dir])
-    genpcap.get_pipeline_pcap(out_dir)
+    get_pipeline_pcap(out_dir)
 
     return True

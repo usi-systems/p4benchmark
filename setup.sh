@@ -37,7 +37,7 @@ bash ../behavioral-model/travis/install-nnpy.sh
 
 # clean up
 cd ..
-rm -rf $tmpdir
+sudo rm -rf $tmpdir
 
 cd behavioral-model
 ./autogen.sh

@@ -77,6 +77,8 @@ def main():
     while(nb_headers <= 40):
         offer_load = 100000
         p = BenchmarkParser(nb_headers, offer_load)
+        # compile
+        p.compile_p4_program()
         p.start()
         while (p.has_lost_packet() != True):
             offer_load += 100000

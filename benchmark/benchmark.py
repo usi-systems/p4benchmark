@@ -19,7 +19,7 @@ class P4Benchmark(object):
         self.cli_path = os.path.join(bmv2, 'tools/runtime_CLI.py')
         self.pktgen = os.path.join(p4bench, 'pktgen/build/p4benchmark')
         self.analyse = os.path.join(p4bench, 'benchmark/analyse.R')
-        self.nb_packets = 1000000
+        self.nb_packets = 100000
         self.log_level = ''
         self.parent_dir = parent_dir
         self.directory = directory

@@ -1,19 +1,17 @@
 # -*- coding: utf-8 -*-
 
-from .context import p4gen
-
 import unittest
-
+from state_access.bm_memory import benchmark_memory
 
 class RegisterTestSuite(unittest.TestCase):
     """Register test cases."""
 
     def test_generate_multiple_registers(self):
-        ret = p4gen.bm_memory.benchmark_memory(10, 32, 1024, 1)
+        ret = benchmark_memory(10, 32, 1024, 1)
         self.assertTrue(ret)
 
     def test_generate_single_register(self):
-        ret = p4gen.bm_memory.benchmark_memory(3, 32, 1024, 10)
+        ret = benchmark_memory(3, 32, 1024, 10)
         self.assertTrue(ret)
 
 if __name__ == '__main__':

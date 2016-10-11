@@ -3,8 +3,10 @@
 import os
 import unittest
 from subprocess import call
-
-from .context import p4gen
+from parsing.bm_parser import benchmark_parser, add_number_of_branchings
+from processing.bm_pipeline import benchmark_pipeline
+from state_access.bm_memory import benchmark_memory
+from packet_modification.bm_modification import benchmark_modification
 
 class CompilationTests(unittest.TestCase):
     """Parser test cases."""
@@ -20,61 +22,60 @@ class CompilationTests(unittest.TestCase):
         switch_path = os.path.join(bmv2, 'targets/simple_switch/simple_switch')
         cli_path = os.path.join(bmv2, 'tools/runtime_CLI.py')
 
-
     def tearDown(self):
         pass
 
     def test_benchmark_parser_generator(self):
-        ret = p4gen.bm_parser.benchmark_parser(10, 4)
+        ret = benchmark_parser(10, 4)
         self.assertTrue(ret)
         prog = 'main'
         ret = call([self.p4c, 'output/%s.p4' % prog , '--json', 'output/%s.json' % prog])
         self.assertEqual(ret, 0)
 
     def test_benchmark_complex_branching_generator(self):
-        ret = p4gen.bm_parser.add_number_of_branchings(5, 4)
+        ret = add_number_of_branchings(5, 4)
         self.assertTrue(ret)
         prog = 'main'
         ret = call([self.p4c, 'output/%s.p4' % prog , '--json', 'output/%s.json' % prog])
         self.assertEqual(ret, 0)
 
     def test_benchmark_complex_branching_generator2(self):
-        ret = p4gen.bm_parser.add_number_of_branchings(4, 5)
+        ret = add_number_of_branchings(4, 5)
         self.assertTrue(ret)
         prog = 'main'
         ret = call([self.p4c, 'output/%s.p4' % prog , '--json', 'output/%s.json' % prog])
         self.assertEqual(ret, 0)
 
     def test_benchmark_pipeline_generator(self):
-        ret = p4gen.bm_pipeline.benchmark_pipeline(10, 128)
+        ret = benchmark_pipeline(10, 128)
         self.assertTrue(ret)
         prog = 'main'
         ret = call([self.p4c, 'output/%s.p4' % prog , '--json', 'output/%s.json' % prog])
         self.assertEqual(ret, 0)
 
     def test_benchmark_memory_consumption_generator(self):
-        ret = p4gen.bm_memory.benchmark_memory(10, 32, 1024, 1)
+        ret = benchmark_memory(10, 32, 1024, 1)
         self.assertTrue(ret)
         prog = 'main'
         ret = call([self.p4c, 'output/%s.p4' % prog , '--json', 'output/%s.json' % prog])
         self.assertEqual(ret, 0)
 
     def test_benchmark_add_header_generator(self):
-        ret = p4gen.bm_modification.benchmark_modification(10, 4, 'add')
+        ret = benchmark_modification(10, 4, 'add')
         self.assertTrue(ret)
         prog = 'main'
         ret = call([self.p4c, 'output/%s.p4' % prog , '--json', 'output/%s.json' % prog])
         self.assertEqual(ret, 0)
 
     def test_benchmark_remove_header_generator(self):
-        ret = p4gen.bm_modification.benchmark_modification(10, 4, 'rm')
+        ret = benchmark_modification(10, 4, 'rm')
         self.assertTrue(ret)
         prog = 'main'
         ret = call([self.p4c, 'output/%s.p4' % prog , '--json', 'output/%s.json' % prog])
         self.assertEqual(ret, 0)
 
     def test_benchmark_modify_header_generator(self):
-        ret = p4gen.bm_modification.benchmark_modification(10, 4, 'mod')
+        ret = benchmark_modification(10, 4, 'mod')
         self.assertTrue(ret)
         prog = 'main'
         ret = call([self.p4c, 'output/%s.p4' % prog , '--json', 'output/%s.json' % prog])

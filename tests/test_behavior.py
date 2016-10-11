@@ -5,8 +5,10 @@ import unittest
 from subprocess import call, Popen, PIPE
 import shlex
 import time
-
-from .context import p4gen
+from parsing.bm_parser import benchmark_parser, add_number_of_branchings
+from processing.bm_pipeline import benchmark_pipeline
+from state_access.bm_memory import benchmark_memory
+from packet_modification.bm_modification import benchmark_modification
 
 class BehaviorTests(unittest.TestCase):
     """Parser test cases."""
@@ -22,8 +24,7 @@ class BehaviorTests(unittest.TestCase):
         self.switch_path = os.path.join(bmv2, 'targets/simple_switch/simple_switch')
         self.cli_path = os.path.join(bmv2, 'tools/runtime_CLI.py')
         self.nb_packets = 20000
-        # inter-packet gap: 200 us
-        self.interval = 200000
+        self.offer_load = 100000
         self.log_level = ''
 
     def tearDown(self):
@@ -60,7 +61,7 @@ class BehaviorTests(unittest.TestCase):
 
     def run_packet_generator(self):
         cmd = 'sudo {0} -p {1} -i veth4 -c {2} -t {3}'.format('pktgen/build/p4benchmark',
-            'output/test.pcap', self.nb_packets, self.interval)
+            'output/test.pcap', self.nb_packets, self.offer_load)
         print cmd
         args = shlex.split(cmd)
         p = Popen(args)
@@ -89,7 +90,7 @@ class BehaviorTests(unittest.TestCase):
         self.add_rules(json_path, commands, 3)
 
     def test_benchmark_parser_behavior(self):
-        ret = p4gen.bm_parser.benchmark_parser(10, 4)
+        ret = benchmark_parser(10, 4)
         self.assertTrue(ret)
         # run switch
         self.run_behavioral_switch()
@@ -97,7 +98,7 @@ class BehaviorTests(unittest.TestCase):
         self.run_packet_generator()
 
     def test_benchmark_pipeline_behavior(self):
-        ret = p4gen.bm_pipeline.benchmark_pipeline(10, 128)
+        ret = benchmark_pipeline(10, 128)
         self.assertTrue(ret)
         # run switch
         self.run_behavioral_switch()
@@ -105,7 +106,7 @@ class BehaviorTests(unittest.TestCase):
         self.run_packet_generator()
 
     def test_benchmark_state_access_behavior(self):
-        ret = p4gen.bm_memory.benchmark_memory(10, 32, 1024, 1)
+        ret = benchmark_memory(10, 32, 1024, 1)
         self.assertTrue(ret)
         # run switch
         self.run_behavioral_switch()
@@ -113,28 +114,13 @@ class BehaviorTests(unittest.TestCase):
         self.run_packet_generator()
 
     def test_benchmark_modify_header_behavior(self):
-        ret = p4gen.bm_modification.benchmark_modification(10, 4, 'mod')
+        ret = benchmark_modification(10, 4, 'mod')
         self.assertTrue(ret)
         # run switch
         self.run_behavioral_switch()
         # run packet generator
         self.run_packet_generator()
 
-    # def test_benchmark_add_header_behavior(self):
-    #     ret = p4gen.bm_modification.benchmark_modification(10, 4, 'add')
-    #     self.assertTrue(ret)
-    #     # run switch
-    #     self.run_behavioral_switch()
-    #     # run packet generator
-    #     self.run_packet_generator()
-
-    # def test_benchmark_remove_header_behavior(self):
-    #     ret = p4gen.bm_modification.benchmark_modification(10, 4, 'rm')
-    #     self.assertTrue(ret)
-    #     # run switch
-    #     self.run_behavioral_switch()
-    #     # run packet generator
-    #     self.run_packet_generator()
 
 if __name__ == '__main__':
     suite = unittest.TestLoader().loadTestsFromTestCase(BehaviorTests)

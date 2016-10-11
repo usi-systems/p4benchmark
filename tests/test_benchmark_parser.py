@@ -8,7 +8,7 @@ import time
 from nose_parameterized import parameterized
 from nose.tools import assert_equal
 
-from .context import p4gen
+from parsing.bm_parser import benchmark_parser, add_number_of_branchings
 
 class BenchmarkParser(unittest.TestCase):
     @parameterized.expand([
@@ -27,7 +27,7 @@ class BenchmarkParser(unittest.TestCase):
         if not os.path.exists(directory):
             os.makedirs(directory)
 
-        ret = p4gen.bm_parser.benchmark_parser(nb_header, nb_fields)
+        ret = benchmark_parser(nb_header, nb_fields)
         self.assertTrue(ret)
         # run switch
         self.run_behavioral_switch(nb_header)
@@ -126,9 +126,3 @@ class BenchmarkParser(unittest.TestCase):
         time.sleep(2)
         # insert rules: retry 3 times if not succeed
         self.add_rules(json_path, commands, 3)
-
-
-
-# if __name__ == '__main__':
-#     suite = unittest.TestLoader().loadTestsFromTestCase(BenchmarkParser)
-#     unittest.TextTestRunner(verbosity=2).run(suite)

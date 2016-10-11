@@ -1,10 +1,7 @@
-# -*- coding: utf-8 -*-
-
 import os
 import unittest
 from subprocess import call
-
-from .context import p4gen
+from parsing.bm_parser import add_number_of_branchings
 
 class ParserTests(unittest.TestCase):
     """Parser test cases."""
@@ -25,21 +22,25 @@ class ParserTests(unittest.TestCase):
         pass
 
     def test_benchmark_parser_complexity_small(self):
-        ret = p4gen.bm_parser.add_number_of_branchings(2, 2)
+        ret = add_number_of_branchings(2, 2)
         self.assertTrue(ret)
 
     def test_benchmark_parser_complexity_big_fanout(self):
-        ret = p4gen.bm_parser.add_number_of_branchings(2, 10)
+        ret = add_number_of_branchings(2, 10)
         self.assertTrue(ret)
 
     def test_benchmark_parser_complexity_medium_depth(self):
-        ret = p4gen.bm_parser.add_number_of_branchings(10, 2)
+        ret = add_number_of_branchings(10, 2)
         self.assertTrue(ret)
 
     def test_benchmark_parser_complexity_big_depth(self):
-        ret = p4gen.bm_parser.add_number_of_branchings(950, 1)
+        ret = add_number_of_branchings(950, 1)
         self.assertTrue(ret)
 
     def test_benchmark_parser_complexity_big(self):
-        ret = p4gen.bm_parser.add_number_of_branchings(5, 5)
+        ret = add_number_of_branchings(5, 5)
         self.assertTrue(ret)
+
+if __name__ == '__main__':
+    suite = unittest.TestLoader().loadTestsFromTestCase(ParserTests)
+    unittest.TextTestRunner(verbosity=2).run(suite)

@@ -2,12 +2,18 @@
 
 set -e
 
+sudo sh -c 'echo "deb http://cran.rstudio.com/bin/linux/ubuntu trusty/" >> /etc/apt/sources.list'
+gpg --keyserver keyserver.ubuntu.com --recv-key E084DAB9
+gpg -a --export E084DAB9 | sudo apt-key add -
+
 sudo apt-get update -y
+
+# R dependencies
+sudo apt-get -y install libcurl4-gnutls-dev libxml2-dev libssl-dev libcairo-dev
 
 # install behavioral-model dependencies
 sudo apt-get install -y git autoconf python-pip build-essential python-dev \
-    cmake libjudy-dev libgmp-dev libpcap-dev mktemp libffi-dev r-base-core \
-    gawk
+    cmake libjudy-dev libgmp-dev libpcap-dev mktemp libffi-dev r-base gawk
 
 git submodule init
 git submodule update
@@ -67,3 +73,5 @@ export PYTHONPATH=\$PYTHONPATH:\$P4BENCHMARK_ROOT
 EOM
 
 source $HOME/.bashrc
+
+sudo chown -R $USER:$USER /usr/local/lib/R

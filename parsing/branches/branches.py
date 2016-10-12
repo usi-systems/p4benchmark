@@ -10,8 +10,8 @@ from benchmark.benchmark import P4Benchmark
 
 class ComplexityDepth(P4Benchmark):
 
-    def __init__(self, depth, fanout, offer_load):
-        parent_dir = 'result/complexity'
+    def __init__(self, aspect, depth, fanout, offer_load):
+        parent_dir = 'result/%s' % aspect
         directory = '{0}/{1}/{2}'.format(parent_dir, depth, offer_load)
         super(ComplexityDepth, self).__init__(parent_dir, directory, offer_load)
         self.depth = depth
@@ -31,19 +31,37 @@ class ComplexityDepth(P4Benchmark):
             p.wait()
             assert (p.returncode == 0)
 
-def run(depth=1, fanout=2):
+def vary_depth(depth=2, fanout=2):
     while(depth <= 10):
         offer_load = 100000
-        p = ComplexityDepth(depth, fanout, offer_load)
+        p = ComplexityDepth('depth', depth, fanout, offer_load)
         # compile
         p.compile_p4_program()
         p.start()
         while (p.has_lost_packet() != True):
             offer_load += 100000
-            p = ComplexityDepth(depth, fanout, offer_load)
+            p = ComplexityDepth('depth', depth, fanout, offer_load)
             p.start()
         depth += 1
     p.run_analyser()
+
+def vary_fanout(fanout=2, depth=2):
+    while(fanout <= 10):
+        offer_load = 100000
+        p = ComplexityDepth('fanout', depth, fanout, offer_load)
+        # compile
+        p.compile_p4_program()
+        p.start()
+        while (p.has_lost_packet() != True):
+            offer_load += 100000
+            p = ComplexityDepth('depth', depth, fanout, offer_load)
+            p.start()
+        fanout += 1
+    p.run_analyser()
+
+def run(depth=2, fanout=2):
+    vary_depth(depth, fanout)
+    vary_fanout(fanout, depth)
 
 if __name__=='__main__':
     parser = argparse.ArgumentParser(description='P4 Benchmark')

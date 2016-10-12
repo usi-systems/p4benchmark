@@ -40,16 +40,20 @@ def ethernet():
     parse_eth = read_template('template/parsers/parse_ethernet.txt')
     return (ethernet_hdr + parse_eth)
 
-def ipv4():
+def ipv4(checksum=False):
     """
     This method returns the IPv4 header definition and its parser
-
+    :param checksum: include checksum calculation
+    :type checksum: bool
     :returns:  str -- the code in plain text
     :raises: None
 
     """
     ipv4_hdr = read_template('template/headers/ipv4.txt')
-    parse_ipv4 = read_template('template/parsers/parse_ipv4.txt')
+    if checksum:
+        parse_ipv4 = read_template('template/parsers/parse_ipv4_checksum.txt')
+    else:
+        parse_ipv4 = read_template('template/parsers/parse_ipv4.txt')
     return (ipv4_hdr + parse_ipv4)
 
 def tcp():
@@ -414,19 +418,25 @@ def add_udp_header():
     """
     return read_template('template/headers/udp.txt')
 
-def add_udp_parser(other_states=''):
+def add_udp_parser(other_states='', checksum=False):
     """
     This method returns the UDP parser. It's possible
     to provide an option to a next state along the default ingress
 
     :param other_states: other options in 'return select' statement
     :type other_states: str
+    :param checksum: include checksum calculation
+    :type checksum: bool
     :returns:  str -- the code in plain text
     :raises: None
 
     """
     next_states = other_states + select_case('default', 'ingress')
-    return add_parser('udp_t', 'udp', 'parse_udp', 'dstPort', next_states)
+    binding = {'next_states' : next_states}
+    if checksum:
+        return read_template('template/parsers/parse_udp_checksum.txt', binding)
+    else:
+        return read_template('template/parsers/parse_udp.txt', binding)
 
 def udp(other_states=''):
     """

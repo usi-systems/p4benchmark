@@ -2,9 +2,9 @@
 
 import argparse
 
-import headers import headers
+from headers import headers
 from fields import fields
-import branches import branches
+from branches import branches
 
 if __name__=='__main__':
     headers.run()

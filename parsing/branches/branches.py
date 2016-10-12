@@ -31,8 +31,8 @@ class ComplexityDepth(P4Benchmark):
             p.wait()
             assert (p.returncode == 0)
 
-def run(depth=5, fanout=2):
-    while(depth <= 5):
+def run(depth=1, fanout=2):
+    while(depth <= 10):
         offer_load = 100000
         p = ComplexityDepth(depth, fanout, offer_load)
         # compile

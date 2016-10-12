@@ -84,7 +84,34 @@ class P4Benchmark(object):
         self.tearDown()
 
     def run_behavioral_switch(self):
-        pass
+        prog = 'main'
+        json_path = 'output/%s.json' % prog
+        commands = 'output/commands.txt'
+        cmd = 'sudo {0} {1} -i0@veth0 -i1@veth2 -i 2@veth4 {2}'.format(self.switch_path,
+                json_path, self.log_level)
+        print cmd
+        args = shlex.split(cmd)
+        out_file = '{0}/bmv2.log'.format(self.directory)
+        with open(out_file, 'w') as out:
+            out.write('Number of packets: %d\n' % self.nb_packets)
+            out.write('Offered load:  %d\n' % self.offer_load)
+            self.p = Popen(args, stdout=out, stderr=out, shell=False)
+        assert (self.p.poll() == None)
+        # wait for the switch to start
+        time.sleep(2)
+        # insert rules: retry 3 times if not succeed
+        self.add_rules(json_path, commands, 3)
 
     def run_packet_generator(self):
-        pass
+        cmd = 'sudo {0} -p {1} -i veth4 -c {2} -t {3}'.format(self.pktgen,
+            'output/test.pcap', self.nb_packets, self.offer_load)
+        print cmd
+        args = shlex.split(cmd)
+        out_file = '{0}/latency.csv'.format(self.directory)
+        err_file = '{0}/loss.csv'.format(self.directory)
+        out = open(out_file, 'w+')
+        err = open(err_file, 'w+')
+        p = Popen(args, stdout=out, stderr=err)
+        p.wait()
+        out.close()
+        err.close()

@@ -4,7 +4,6 @@ import os
 from subprocess import call, Popen, PIPE
 import shlex
 import time
-import p4gen
 import argparse
 
 class P4Benchmark(object):

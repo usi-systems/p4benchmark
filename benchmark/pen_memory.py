@@ -4,9 +4,8 @@ import os
 from subprocess import call, Popen, PIPE
 import shlex
 import time
-import p4gen
 import argparse
-
+from state_access.bm_memory import benchmark_memory
 from benchmark import P4Benchmark
 
 class BenchmarkMemory(P4Benchmark):
@@ -45,8 +44,7 @@ class BenchmarkMemory(P4Benchmark):
         err.close()
 
     def compile_p4_program(self):
-        ret = p4gen.bm_memory.benchmark_memory(self.nb_registers,
-                                        self.element_size, self.nb_elements, 1)
+        ret = benchmark_memory(self.nb_registers, self.element_size, self.nb_elements, 1)
         assert (ret == True)
         prog = 'main'
         json_path = 'output/%s.json' % prog

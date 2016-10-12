@@ -4,9 +4,8 @@ import os
 from subprocess import call, Popen, PIPE
 import shlex
 import time
-import p4gen
 import argparse
-
+from processing.bm_pipeline import benchmark_pipeline
 from benchmark import P4Benchmark
 
 class BenchmarkPipelineDepth(P4Benchmark):
@@ -70,7 +69,7 @@ class BenchmarkPipelineDepth(P4Benchmark):
         err.close()
 
     def compile_p4_program(self):
-        ret = p4gen.bm_pipeline.benchmark_pipeline(self.nb_tables, self.tbl_size)
+        ret = benchmark_pipeline(self.nb_tables, self.tbl_size)
         assert (ret == True)
         prog = 'main'
         json_path = 'output/%s.json' % prog

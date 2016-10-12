@@ -1,12 +1,11 @@
 #!/usr/bin/env python
 
 import os
+import argparse
 from subprocess import call, Popen, PIPE
 import shlex
 import time
-import p4gen
-import argparse
-
+from packet_modification.bm_modification import benchmark_modification
 from benchmark import P4Benchmark
 
 class BenchmarkPacketMod(P4Benchmark):
@@ -36,8 +35,7 @@ class BenchmarkPacketMod(P4Benchmark):
         err.close()
 
     def compile_p4_program(self):
-        ret = p4gen.bm_modification.benchmark_modification(self.nb_operations,
-                self.nb_fields, 'mod')
+        ret = benchmark_modification(self.nb_operations, self.nb_fields, 'mod')
         assert (ret == True)
         prog = 'main'
         json_path = 'output/%s.json' % prog

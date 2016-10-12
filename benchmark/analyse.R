@@ -10,8 +10,10 @@ dirs = list.dirs(args[1])
 read_latency <- function(file_path, variable, offer_load, packet_lost) {
     df <- read.csv(file_path, sep='', header=FALSE, col.names=c('throughput', 'latency'))
     # cut the first and the last rows
-    df <- tail(df,-1)
-    df <- head(df,-1)
+    if (nrow(df) > 2) {
+        df <- tail(df,-1)
+        df <- head(df,-1)
+    }
     df$variable <- as.numeric(variable)
     df$offer_load <- as.numeric(offer_load)
     df$packet_lost <- as.numeric(packet_lost)

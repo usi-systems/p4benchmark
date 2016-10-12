@@ -28,7 +28,7 @@ def get_parser_pcap(nb_fields, nb_headers, udp_dest_port, out_dir):
     pkt /= add_layers(nb_fields, nb_headers)
     wrpcap('%s/test.pcap' % out_dir, pkt)
 
-def get_state_pcap(udp_dest_port, out_dir):
+def get_read_state_pcap(udp_dest_port, out_dir):
 
     class MemTest(Packet):
         name = "P4Bench Message for MemTest"
@@ -40,11 +40,26 @@ def get_state_pcap(udp_dest_port, out_dir):
 
     pkt = add_eth_ip_udp_headers(udp_dest_port)
 
-    no_op = pkt / MemTest(op=0)
     set_data = pkt / MemTest(op=2, index=0)
+
+    pkts = [ set_data ]
+    wrpcap('%s/test.pcap' % out_dir, pkts)
+
+def get_write_state_pcap(udp_dest_port, out_dir):
+
+    class MemTest(Packet):
+        name = "P4Bench Message for MemTest"
+        fields_desc =  [
+            XBitField("op", 0x1, 4),
+            XBitField("index", 0x1, 12),
+            XBitField("data", 0xf1f2f3f4, 32),
+        ]
+
+    pkt = add_eth_ip_udp_headers(udp_dest_port)
+
     get_data = pkt / MemTest(op=1, index=0, data=0)
 
-    pkts = [ no_op, set_data, get_data ]
+    pkts = [ get_data ]
     wrpcap('%s/test.pcap' % out_dir, pkts)
 
 def get_pipeline_pcap(out_dir):

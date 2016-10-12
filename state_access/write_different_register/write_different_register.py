@@ -11,7 +11,7 @@ from benchmark.benchmark import P4Benchmark
 class RegisterBenchmark(P4Benchmark):
 
     def __init__(self, operation, offer_load):
-        parent_dir = 'result/write_same_register'
+        parent_dir = 'result/write_different_register'
         directory = '{0}/{1}/{2}'.format(parent_dir, operation, offer_load)
         super(RegisterBenchmark, self).__init__(parent_dir, directory, offer_load)
         self.operation = operation
@@ -19,7 +19,9 @@ class RegisterBenchmark(P4Benchmark):
             os.makedirs(self.directory)
 
     def compile_p4_program(self):
-        ret = benchmark_memory(1, 32, 1024, self.operation, True)
+        # each operation write to a distinguished register
+        registers = self.operation
+        ret = benchmark_memory(registers, 32, 1024, 1, True)
         assert (ret == True)
         prog = 'main'
         json_path = 'output/%s.json' % prog

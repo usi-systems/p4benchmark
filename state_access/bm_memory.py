@@ -2,7 +2,7 @@ import os
 from subprocess import call
 from pkg_resources import resource_filename
 
-from p4gen.genpcap import get_state_pcap
+from p4gen.genpcap import get_write_state_pcap, get_read_state_pcap
 from p4gen.p4template import *
 from p4gen import copy_scripts
 
@@ -40,7 +40,7 @@ def add_registers(nb_registers, element_width, nb_elements, nb_operations,
     return code_block
 
 
-def benchmark_memory(nb_registers, element_width, nb_elements, nb_operations):
+def benchmark_memory(nb_registers, element_width, nb_elements, nb_operations, write_op=False):
     """
     This method generate the P4 program to benchmark memory consumption
 
@@ -106,5 +106,9 @@ def benchmark_memory(nb_registers, element_width, nb_elements, nb_operations):
     with open ('%s/commands.txt' % out_dir, 'w') as out:
         out.write(commands)
     copy_scripts(out_dir)
-    get_state_pcap(udp_dport, out_dir)
+    if write_op:
+        get_write_state_pcap(udp_dport, out_dir)
+    else:
+        get_read_state_pcap(udp_dport, out_dir)
+
     return True

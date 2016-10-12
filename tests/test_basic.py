@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import unittest
-from parsing.bm_parser import benchmark_parser, add_number_of_branchings
+from parsing.bm_parser import benchmark_parser
 from processing.bm_pipeline import benchmark_pipeline
 from state_access.bm_memory import benchmark_memory
 from packet_modification.bm_modification import benchmark_modification

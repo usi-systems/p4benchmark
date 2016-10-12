@@ -76,7 +76,7 @@ def write_output(output_dir, program):
         out.write(program)
     copy_scripts(output_dir)
 
-def add_number_of_branchings(depth, fanout):
+def parser_complexity(depth, fanout):
     """
     This method adds Ethernet, IPv4, TCP, UDP, and a number of generic headers
     which follow the UDP header. The UDP destination port 0x9091 is used to
@@ -101,8 +101,11 @@ def add_number_of_branchings(depth, fanout):
     program += preorder(root)
 
     output_dir = 'output'
+    if not os.path.exists(output_dir):
+       os.makedirs(output_dir)
     program = add_forwarding_table(output_dir, program)
     write_output(output_dir, program)
+    get_parser_pcap(depth+1, 1, 0x9091, output_dir)
 
     return True
 

@@ -3,7 +3,7 @@
 import os
 import unittest
 from subprocess import call
-from parsing.bm_parser import benchmark_parser, add_number_of_branchings
+from parsing.bm_parser import benchmark_parser, parser_complexity
 from processing.bm_pipeline import benchmark_pipeline
 from state_access.bm_memory import benchmark_memory
 from packet_modification.bm_modification import benchmark_modification
@@ -33,14 +33,14 @@ class CompilationTests(unittest.TestCase):
         self.assertEqual(ret, 0)
 
     def test_benchmark_complex_branching_generator(self):
-        ret = add_number_of_branchings(5, 4)
+        ret = parser_complexity(5, 4)
         self.assertTrue(ret)
         prog = 'main'
         ret = call([self.p4c, 'output/%s.p4' % prog , '--json', 'output/%s.json' % prog])
         self.assertEqual(ret, 0)
 
     def test_benchmark_complex_branching_generator2(self):
-        ret = add_number_of_branchings(4, 5)
+        ret = parser_complexity(4, 5)
         self.assertTrue(ret)
         prog = 'main'
         ret = call([self.p4c, 'output/%s.p4' % prog , '--json', 'output/%s.json' % prog])

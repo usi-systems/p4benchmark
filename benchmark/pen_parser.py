@@ -5,7 +5,7 @@ from subprocess import call, Popen, PIPE
 import shlex
 import time
 import argparse
-from parsing.bm_parser import benchmark_parser, add_number_of_branchings
+from parsing.bm_parser import benchmark_parser
 
 from benchmark import P4Benchmark
 

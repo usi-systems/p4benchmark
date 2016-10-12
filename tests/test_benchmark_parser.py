@@ -8,7 +8,7 @@ import time
 from nose_parameterized import parameterized
 from nose.tools import assert_equal
 
-from parsing.bm_parser import benchmark_parser, add_number_of_branchings
+from parsing.bm_parser import benchmark_parser
 
 class BenchmarkParser(unittest.TestCase):
     @parameterized.expand([

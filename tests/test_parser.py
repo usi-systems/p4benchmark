@@ -1,7 +1,7 @@
 import os
 import unittest
 from subprocess import call
-from parsing.bm_parser import add_number_of_branchings
+from parsing.bm_parser import parser_complexity
 
 class ParserTests(unittest.TestCase):
     """Parser test cases."""
@@ -22,23 +22,23 @@ class ParserTests(unittest.TestCase):
         pass
 
     def test_benchmark_parser_complexity_small(self):
-        ret = add_number_of_branchings(2, 2)
+        ret = parser_complexity(2, 2)
         self.assertTrue(ret)
 
     def test_benchmark_parser_complexity_big_fanout(self):
-        ret = add_number_of_branchings(2, 10)
+        ret = parser_complexity(2, 10)
         self.assertTrue(ret)
 
     def test_benchmark_parser_complexity_medium_depth(self):
-        ret = add_number_of_branchings(10, 2)
+        ret = parser_complexity(10, 2)
         self.assertTrue(ret)
 
     def test_benchmark_parser_complexity_big_depth(self):
-        ret = add_number_of_branchings(950, 1)
+        ret = parser_complexity(950, 1)
         self.assertTrue(ret)
 
     def test_benchmark_parser_complexity_big(self):
-        ret = add_number_of_branchings(5, 5)
+        ret = parser_complexity(5, 5)
         self.assertTrue(ret)
 
 if __name__ == '__main__':

@@ -46,7 +46,11 @@ print_app_usage(const char *app_name)
     printf("-p    pcap_file    The pcap file for benchmarking the P4 program.\n");
     printf("-o    output_fn    The output file name (stat).\n");
     printf("Options:\n");
+    printf("-c    count        Send \'count\' number of packets .\n");
     printf("-f    filter_exp   Capture packets that match filter expression.\n");
+    printf("-l    log_level    Set log level { 1: INFO, 2: DEBUG }\n");
+    printf("-s    interface    Send packets out of <interface>.\n");
+    printf("-t    throughput   Limit the sending rate.\n");
     printf("\n");
 
     return;
@@ -58,6 +62,7 @@ static struct {
     int   log_level;
     char* pcap_file;
     char* interface;
+    char* send_interface;
     char* filter_exp;
     char* output_fn;
 } config;
@@ -66,12 +71,14 @@ struct app {
     int count;
     pthread_mutex_t mutex_stat;
     pcap_t* sniff;
+    pcap_t* out;
     FILE *fp;
 };
 
 static void free_config() {
     free(config.pcap_file);
     free(config.interface);
+    free(config.send_interface);
     free(config.filter_exp);
     free(config.output_fn);
 }
@@ -92,7 +99,7 @@ void parse_args(int argc, char **argv)
     config.bps = 1;
     config.log_level = APP_INFO;
     /* Parse command line */
-    while ((opt = getopt(argc, argv, "c:i:p:f:t:l:o:")) != EOF) {
+    while ((opt = getopt(argc, argv, "c:t:l:i:s:p:f:o:")) != EOF) {
         switch (opt) {
         case 'c':
             config.count = atoi(optarg);
@@ -105,6 +112,9 @@ void parse_args(int argc, char **argv)
             break;
         case 'i':
             config.interface = strdup(optarg);
+            break;
+        case 's':
+            config.send_interface = strdup(optarg);
             break;
         case 'p':
             config.pcap_file = strdup(optarg);
@@ -232,8 +242,9 @@ int main(int argc, char* argv[])
 
     pcap_t *input_packets = read_pcap(config.pcap_file);
 
-    struct bpf_program fp;    
+    struct bpf_program fp;
     app_ctx.sniff = init_dev(&fp, config.interface, config.filter_exp);
+
 
     #ifdef WRITE_TO_FILE
         app_ctx.fp = fopen(config.output_fn, "w");
@@ -245,6 +256,14 @@ int main(int argc, char* argv[])
         fprintf(stderr, "Error Opening file to write\n");
         exit(EXIT_FAILURE);
     }
+
+    if (config.send_interface != NULL) {
+        struct bpf_program send_fp;
+        app_ctx.out = init_dev(&send_fp, config.send_interface, NULL);
+    } else {
+        app_ctx.out = app_ctx.sniff;
+    }
+
     pthread_mutex_init(&app_ctx.mutex_stat, NULL);
 
     if (pthread_create(&sniff_thread, NULL, sniff, &app_ctx) < 0) {
@@ -281,7 +300,7 @@ int main(int argc, char* argv[])
         for (i = 0 ; i < config.count; i++) {
             gettimeofday(&tv, NULL);
             memcpy(buf + header.caplen, &tv, sizeof(struct timeval));
-            pcap_inject(app_ctx.sniff, buf, buflen);
+            pcap_inject(app_ctx.out, buf, buflen);
             bytes_sent_in_window += buflen;
 
             if (bytes_sent_in_window >= max_bytes_per_window) {
@@ -337,6 +356,8 @@ int main(int argc, char* argv[])
     /* cleanup */
     pcap_freecode(&fp);
     pcap_close(app_ctx.sniff);
+    if (config.send_interface != NULL)
+        pcap_close(app_ctx.out);
     pcap_close(input_packets);
     free_config();
 

@@ -8,7 +8,7 @@ import time
 from nose_parameterized import parameterized
 from nose.tools import assert_equal
 
-from parsing.bm_parser import benchmark_parser
+from parsing.bm_parser import benchmark_parser_header
 
 class BenchmarkParser(unittest.TestCase):
     @parameterized.expand([
@@ -27,7 +27,7 @@ class BenchmarkParser(unittest.TestCase):
         if not os.path.exists(directory):
             os.makedirs(directory)
 
-        ret = benchmark_parser(nb_header, nb_fields)
+        ret = benchmark_parser_header(nb_header, nb_fields)
         self.assertTrue(ret)
         # run switch
         self.run_behavioral_switch(nb_header)

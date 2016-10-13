@@ -3,7 +3,7 @@
 import os
 import unittest
 from subprocess import call
-from parsing.bm_parser import benchmark_parser, parser_complexity
+from parsing.bm_parser import benchmark_parser_header, parser_complexity
 from processing.bm_pipeline import benchmark_pipeline
 from state_access.bm_memory import benchmark_memory
 from packet_modification.bm_modification import benchmark_modification
@@ -25,8 +25,8 @@ class CompilationTests(unittest.TestCase):
     def tearDown(self):
         pass
 
-    def test_benchmark_parser_generator(self):
-        ret = benchmark_parser(10, 4)
+    def test_benchmark_parser_header_generator(self):
+        ret = benchmark_parser_header(10, 4)
         self.assertTrue(ret)
         prog = 'main'
         ret = call([self.p4c, 'output/%s.p4' % prog , '--json', 'output/%s.json' % prog])

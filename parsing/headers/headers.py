@@ -5,7 +5,7 @@ from subprocess import call, Popen, PIPE
 import shlex
 import time
 import argparse
-from parsing.bm_parser import benchmark_parser
+from parsing.bm_parser import benchmark_parser_header
 from benchmark.benchmark import P4Benchmark
 
 class BenchmarkParser(P4Benchmark):
@@ -20,7 +20,7 @@ class BenchmarkParser(P4Benchmark):
             os.makedirs(self.directory)
 
     def compile_p4_program(self):
-        ret = benchmark_parser(self.nb_header, self.nb_field)
+        ret = benchmark_parser_header(self.nb_header, self.nb_field)
         assert (ret == True)
         prog = 'main'
         json_path = 'output/%s.json' % prog

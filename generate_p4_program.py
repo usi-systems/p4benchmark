@@ -2,7 +2,7 @@
 
 import argparse
 
-from parsing.bm_parser import benchmark_parser, benchmark_parser_with_header_field
+from parsing.bm_parser import benchmark_parser_header, benchmark_parser_with_header_field
 from processing.bm_pipeline import benchmark_pipeline
 from state_access.bm_memory import benchmark_memory
 from packet_modification.bm_modification import benchmark_modification
@@ -40,7 +40,7 @@ def main():
     args = parser.parse_args()
 
     if args.parser_header:
-        benchmark_parser(args.headers, args.fields)
+        benchmark_parser_header(args.headers, args.fields)
     if args.parser_field:
         benchmark_parser_with_header_field(args.fields)
     elif args.pipeline:

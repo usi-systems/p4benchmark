@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import unittest
-from parsing.bm_parser import benchmark_parser
+from parsing.bm_parser import benchmark_parser_header, benchmark_parser_with_header_field
 from processing.bm_pipeline import benchmark_pipeline
 from state_access.bm_memory import benchmark_memory
 from packet_modification.bm_modification import benchmark_modification
@@ -10,8 +10,12 @@ from packet_modification.bm_modification import benchmark_modification
 class BasicTestSuite(unittest.TestCase):
     """Basic test cases."""
 
-    def test_benchmark_parser(self):
-        ret = benchmark_parser(10, 4)
+    def test_benchmark_parser_header(self):
+        ret = benchmark_parser_header(10, 1)
+        self.assertTrue(ret)
+
+    def test_benchmark_parser_field(self):
+        ret = benchmark_parser_with_header_field(10)
         self.assertTrue(ret)
 
     def test_benchmark_pipeline(self):

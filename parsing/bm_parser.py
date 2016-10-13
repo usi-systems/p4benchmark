@@ -144,7 +144,7 @@ def add_headers_and_parsers(nb_headers, nb_fields):
     return program
 
 
-def benchmark_parser(nb_headers, nb_fields):
+def benchmark_parser_header(nb_headers, nb_fields):
     """
     This method generate the P4 program to benchmark the P4 parser
 

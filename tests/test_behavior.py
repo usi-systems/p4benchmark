@@ -5,7 +5,7 @@ import unittest
 from subprocess import call, Popen, PIPE
 import shlex
 import time
-from parsing.bm_parser import benchmark_parser
+from parsing.bm_parser import benchmark_parser_header
 from processing.bm_pipeline import benchmark_pipeline
 from state_access.bm_memory import benchmark_memory
 from packet_modification.bm_modification import benchmark_modification
@@ -89,8 +89,8 @@ class BehaviorTests(unittest.TestCase):
         # insert rules: retry 3 times if not succeed
         self.add_rules(json_path, commands, 3)
 
-    def test_benchmark_parser_behavior(self):
-        ret = benchmark_parser(10, 4)
+    def test_benchmark_parser_header_behavior(self):
+        ret = benchmark_parser_header(10, 4)
         self.assertTrue(ret)
         # run switch
         self.run_behavioral_switch()

@@ -10,12 +10,10 @@ sudo ./setup.sh
 
 ## Generate P4 Program and PCAP file for testing
 
-The following command will generate a P4 program that parses Ethernet, IP, UDP
-and 2 user-defined headers. Each header contains 4 fields and each field is
-16-bit wide.
+The following command will generate a P4 program that parses Ethernet, IP, UDP and a customized header containing 4 fields and each field is 16-bit wide.
 
 ```
-python generate_p4_program.py --parser --headers 2 --fields 4
+python generate_p4_program.py --parser-field --fields 4
 ```
 
 ## Generated Files
@@ -46,7 +44,7 @@ In another terminal, run:
 
 ```
 cd output
-sudo ./run_test.py --nb-headers 2 --nb-fields 4
+sudo ./run_test.py --nb-headers 1 --nb-fields 4
 ```
 
 ## PKTGEN (Send PCAP file)
@@ -62,7 +60,7 @@ mkdir build
 cd build
 cmake ..
 make
-``
+```
 
 ### Run pktgen
 
@@ -72,6 +70,5 @@ in the `result` directory.
 
 ```
 $ p4benchmark/pktgen/build
-
 sudo ./p4benchmark -p ../../output/test.pcap -i veth4 -c 10000 -t 10000 -o result
 ```

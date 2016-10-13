@@ -1,7 +1,7 @@
 import os
 from subprocess import call
 from pkg_resources import resource_filename
-from p4gen.genpcap import get_parser_pcap
+from p4gen.genpcap import get_parser_header_pcap, get_parser_field_pcap
 from p4gen.p4template import *
 from p4gen import copy_scripts
 
@@ -105,7 +105,7 @@ def parser_complexity(depth, fanout):
        os.makedirs(output_dir)
     program = add_forwarding_table(output_dir, program)
     write_output(output_dir, program)
-    get_parser_pcap(depth+1, 1, 0x9091, output_dir)
+    get_parser_header_pcap(depth+1, 1, 0x9091, output_dir)
 
     return True
 
@@ -161,5 +161,25 @@ def benchmark_parser(nb_headers, nb_fields):
     program  = add_headers_and_parsers(nb_headers, nb_fields)
     program = add_forwarding_table(output_dir, program)
     write_output(output_dir, program)
-    get_parser_pcap(nb_fields, nb_headers, 0x9091, output_dir)
+    get_parser_header_pcap(nb_fields, nb_headers, 0x9091, output_dir)
+
+    return True
+
+def benchmark_parser_with_header_field(nb_fields):
+    """
+    This method generate the P4 program to benchmark the P4 parser
+
+    :param nb_fields: the number of fields (16 bits) in each header
+    :type tbl_size: int
+    :returns: bool -- True if there is no error
+
+    """
+    output_dir = 'output'
+    if not os.path.exists(output_dir):
+       os.makedirs(output_dir)
+    program  = add_headers_and_parsers(1, nb_fields)
+    program = add_forwarding_table(output_dir, program)
+    write_output(output_dir, program)
+    get_parser_field_pcap(nb_fields, 0x9091, output_dir)
+
     return True

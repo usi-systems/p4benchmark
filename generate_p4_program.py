@@ -2,7 +2,7 @@
 
 import argparse
 
-from parsing.bm_parser import benchmark_parser
+from parsing.bm_parser import benchmark_parser, benchmark_parser_with_header_field
 from processing.bm_pipeline import benchmark_pipeline
 from state_access.bm_memory import benchmark_memory
 from packet_modification.bm_modification import benchmark_modification
@@ -10,8 +10,10 @@ from packet_modification.bm_modification import benchmark_modification
 def main():
     parser = argparse.ArgumentParser(description='A programs that generate a'
                             ' P4 program for benchmarking a particular feature')
-    parser.add_argument('-p', '--parser', default=False, action='store_true',
-                            help='parser benchmark')
+    parser.add_argument('--parser-header', default=False, action='store_true',
+                            help='parser header benchmark')
+    parser.add_argument('--parser-field', default=False, action='store_true',
+                            help='parser field benchmark')
     parser.add_argument('--pipeline', default=False, action='store_true',
                             help='pipeline benchmark')
     parser.add_argument('--memory', default=False, action='store_true',
@@ -37,8 +39,10 @@ def main():
 
     args = parser.parse_args()
 
-    if args.parser:
+    if args.parser_header:
         benchmark_parser(args.headers, args.fields)
+    if args.parser_field:
+        benchmark_parser_with_header_field(args.fields)
     elif args.pipeline:
         benchmark_pipeline(args.tables, args.table_size)
     elif args.mod_packet:

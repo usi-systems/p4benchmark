@@ -5,7 +5,7 @@ from subprocess import call, Popen, PIPE
 import shlex
 import time
 import argparse
-from parsing.bm_parser import benchmark_parser
+from parsing.bm_parser import benchmark_parser_with_header_field
 from benchmark.benchmark import P4Benchmark
 
 class BenchmarkParserHeaderField(P4Benchmark):
@@ -15,12 +15,11 @@ class BenchmarkParserHeaderField(P4Benchmark):
         directory = '{0}/{1}/{2}'.format(parent_dir, nb_field, offer_load)
         super(BenchmarkParserHeaderField, self).__init__(parent_dir, directory, offer_load)
         self.nb_field = nb_field
-        self.nb_header = 1
         if not os.path.exists(self.directory):
             os.makedirs(self.directory)
 
     def compile_p4_program(self):
-        ret = benchmark_parser(self.nb_header, self.nb_field)
+        ret = benchmark_parser_with_header_field(self.nb_field)
         assert (ret == True)
         prog = 'main'
         json_path = 'output/%s.json' % prog

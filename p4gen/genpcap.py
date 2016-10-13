@@ -2,6 +2,9 @@ from scapy.all import Packet, ShortField, XBitField
 from scapy.all import Ether, IP, UDP
 from scapy.all import wrpcap
 
+MAX_NUM_FIELDS = 40
+MAX_NUM_HEADERS = 40
+
 def add_eth_ip_udp_headers(dport):
     eth = Ether(dst='00:00:00:00:00:02')
     ip  = IP(dst='10.0.0.2', ttl=64)
@@ -16,16 +19,29 @@ def add_layers(nb_fields, nb_headers):
         for i in range(nb_fields):
             fields_desc.append(ShortField('field_%d' %i , 0))
     layers = ''
-    for i in range(nb_headers):
+    for i in range(MAX_NUM_HEADERS):
         if i < (nb_headers - 1):
             layers = layers / P4Bench(field_0=1)
         else:
             layers = layers / P4Bench(field_0=0)
     return layers
 
-def get_parser_pcap(nb_fields, nb_headers, udp_dest_port, out_dir):
+def vary_header_field(nb_fields):
+    class P4Bench(Packet):
+        name = "P4Bench Message"
+        fields_desc =  []
+        for i in range(MAX_NUM_FIELDS):
+            fields_desc.append(ShortField('field_%d' % i , i))
+    return P4Bench()
+
+def get_parser_header_pcap(nb_fields, nb_headers, udp_dest_port, out_dir):
     pkt = add_eth_ip_udp_headers(udp_dest_port)
     pkt /= add_layers(nb_fields, nb_headers)
+    wrpcap('%s/test.pcap' % out_dir, pkt)
+
+def get_parser_field_pcap(nb_fields, udp_dest_port, out_dir):
+    pkt = add_eth_ip_udp_headers(udp_dest_port)
+    pkt /= vary_header_field(nb_fields)
     wrpcap('%s/test.pcap' % out_dir, pkt)
 
 def get_read_state_pcap(udp_dest_port, out_dir):

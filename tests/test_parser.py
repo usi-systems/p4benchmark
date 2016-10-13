@@ -34,7 +34,7 @@ class ParserTests(unittest.TestCase):
         self.assertTrue(ret)
 
     def test_benchmark_parser_complexity_big_depth(self):
-        ret = parser_complexity(950, 1)
+        ret = parser_complexity(500, 1)
         self.assertTrue(ret)
 
     def test_benchmark_parser_complexity_big(self):

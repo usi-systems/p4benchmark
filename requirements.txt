@@ -3,3 +3,4 @@ sphinx-autobuild
 nose
 nose-parameterized
 thrift
+scapy

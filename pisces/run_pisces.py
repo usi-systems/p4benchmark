@@ -50,8 +50,8 @@ class P4Benchmark(object):
 class BenchmarkParser(P4Benchmark):
 
     def __init__(self, nb_header, offer_load):
-        parent_dir = 'result/headers'
-        directory = '{0}/{1}/{2}'.format(parent_dir, nb_header, offer_load)
+        parent_dir = 'logs'
+        directory = '{0}'.format(parent_dir, nb_header, offer_load)
         super(BenchmarkParser, self).__init__(parent_dir, directory, offer_load)
         self.nb_header = nb_header
         self.nb_field = 1
@@ -65,28 +65,83 @@ class BenchmarkParser(P4Benchmark):
         assert (p.returncode == 0)
 
 
-    def compile_p4_program(self):
+    def configure(self):
         ret = benchmark_parser_header(self.nb_header, self.nb_field)
         assert (ret == True)
         prog = 'main'
-        cmd =   """sudo {0}/configure --prefix={0} --with-dpdk={1}
+        cmd =   """{0}/configure --with-dpdk={1}
                 CFLAGS="-g -O2 -Wno-cast-align"
                 p4inputfile={2}
-                p4outputdir={0}/include/p4/src""".format(
-                self.ovs, self.dpdk, 'output/main.p4')
-
+                p4outputdir=./include/p4/src""".format(
+                self.ovs, self.dpdk, '/vagrant/examples/l2_switch/l2_switch.p4')
         print cmd
-
         out_file = '{0}/pisces_compiler.log'.format(self.directory)
         with open(out_file, 'w+') as out:
             p = Popen(shlex.split(cmd), stdout=out, stderr=out)
             p.wait()
             assert (p.returncode == 0)
 
+    def make_switch(self):
+        cmd = "make -j2"
+        print cmd
+        out_file = '{0}/pisces_make.log'.format(self.directory)
+        with open(out_file, 'w+') as out:
+            p = Popen(shlex.split(cmd), stdout=out, stderr=out)
+            p.wait()
+            assert (p.returncode == 0)
+
+    def run_ovsdb_server(self):
+        cmd = """sudo ./ovsdb/ovsdb-server
+                --remote=punix:/usr/local/var/run/openvswitch/db.sock
+                --remote=db:Open_vSwitch,Open_vSwitch,manager_options --pidfile"""
+        print cmd
+        out_file = '{0}/ovsdb_server.log'.format(self.directory)
+        with open(out_file, 'w+') as out:
+            self.ovsdb_server = Popen(shlex.split(cmd), stdout=out, stderr=out)
+
+    def run_ovs_vswitchd(self):
+        cmd = """sudo ./vswitchd/ovs-vswitchd --dpdk -c 0x1 -n 4
+                -- unix:/usr/local/var/run/openvswitch/db.sock --pidfile"""
+        print cmd
+        out_file = '{0}/ovs_vswitchd.log'.format(self.directory)
+        with open(out_file, 'w+') as out:
+            self.ovs_vswitchd = Popen(shlex.split(cmd), stdout=out, stderr=out)
+
+    def add_flows(self, command_file):
+        with open(command_file, 'r') as fin:
+            for line in fin:
+                cmd = """sudo {0}/{1}""".format('utilities', line)
+                print cmd
+                p = Popen(shlex.split(cmd))
+                p.wait()
+
+    def stop_ovs_switch(self, cmd):
+        args = shlex.split(cmd)
+        p = Popen(args)
+        out, err = p.communicate()
+        if out:
+            print out
+        if err:
+            print err
+        self.ovsdb_server.wait()
+        assert (self.ovsdb_server.poll() != None)
+        time.sleep(5)
+
+
 def run(nb_headers=5, step=5):
     offer_load = 100000
     p = BenchmarkParser(nb_headers, offer_load)
-    p.compile_p4_program()
+    p.configure()
+    p.make_switch()
+    p.run_ovsdb_server()
+    p.run_ovs_vswitchd()
+    time.sleep(1)
+    p.add_flows('vs_commands.txt')
+    p.add_flows('opf_commands.txt')
+    print "switch is running"
+    time.sleep(60)
+    p.stop_ovs_switch('sudo pkill ovsdb-server')
+    p.stop_ovs_switch('sudo pkill ovs-vswitchd')
     # p.distclean()
 
 if __name__=='__main__':

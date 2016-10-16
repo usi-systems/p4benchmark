@@ -58,12 +58,11 @@ class BenchmarkParser(P4Benchmark):
         if not os.path.exists(self.directory):
             os.makedirs(self.directory)
 
-    def distclean(self):
-        cmd = 'sudo make -C {0} distclean'.format(self.ovs)
+    def clean(self):
+        cmd = 'make clean'
         p = Popen(shlex.split(cmd))
         p.wait()
         assert (p.returncode == 0)
-
 
     def configure(self):
         ret = benchmark_parser_header(self.nb_header, self.nb_field)
@@ -73,7 +72,7 @@ class BenchmarkParser(P4Benchmark):
                 CFLAGS="-g -O2 -Wno-cast-align"
                 p4inputfile={2}
                 p4outputdir=./include/p4/src""".format(
-                self.ovs, self.dpdk, '/vagrant/examples/l2_switch/l2_switch.p4')
+                self.ovs, self.dpdk, 'output/main.p4')
         print cmd
         out_file = '{0}/pisces_compiler.log'.format(self.directory)
         with open(out_file, 'w+') as out:
@@ -131,18 +130,18 @@ class BenchmarkParser(P4Benchmark):
 def run(nb_headers=5, step=5):
     offer_load = 100000
     p = BenchmarkParser(nb_headers, offer_load)
+    p.clean()
     p.configure()
     p.make_switch()
     p.run_ovsdb_server()
     p.run_ovs_vswitchd()
     time.sleep(1)
     p.add_flows('vs_commands.txt')
-    p.add_flows('opf_commands.txt')
+    p.add_flows('commands.txt')
     print "switch is running"
     time.sleep(60)
     p.stop_ovs_switch('sudo pkill ovsdb-server')
     p.stop_ovs_switch('sudo pkill ovs-vswitchd')
-    # p.distclean()
 
 if __name__=='__main__':
     parser = argparse.ArgumentParser(description='P4 Benchmark')

@@ -22,7 +22,7 @@ class P4Benchmark(object):
         self.cli_path = os.path.join(bmv2, 'tools/runtime_CLI.py')
         self.pktgen = os.path.join(p4bench, 'pktgen/build/p4benchmark')
         self.analyse = os.path.join(p4bench, 'benchmark/analyse.R')
-        self.nb_packets = 10000
+        self.nb_packets = 1000000
         self.log_level = ''
         self.parent_dir = parent_dir
         self.directory = directory
@@ -50,11 +50,11 @@ class P4Benchmark(object):
 class BenchmarkParser(P4Benchmark):
 
     def __init__(self, nb_header, offer_load):
-        parent_dir = 'logs'
-        directory = '{0}'.format(parent_dir, nb_header, offer_load)
+        parent_dir = 'result/parse_header'
+        directory = '{0}/{1}/{2}'.format(parent_dir, nb_header, offer_load)
         super(BenchmarkParser, self).__init__(parent_dir, directory, offer_load)
         self.nb_header = nb_header
-        self.nb_field = 1
+        self.nb_field = 2
         if not os.path.exists(self.directory):
             os.makedirs(self.directory)
 
@@ -126,22 +126,45 @@ class BenchmarkParser(P4Benchmark):
         assert (self.ovsdb_server.poll() != None)
         time.sleep(5)
 
+    def run_remote_pktgen(self):
+        cmd = "ssh -t {0} 'sudo {1} -p {2} -s eth1 -i eth2 -c {3} -t {4}'".format('pktgen',
+                '/home/vagrant/dpl-benchmark/pktgen/build/p4benchmark',
+                '/home/vagrant/dpl-benchmark/pisces/output/test.pcap',
+                self.nb_packets,
+                self.offer_load)
+
+        print cmd
+        args = shlex.split(cmd)
+        out_file = '{0}/latency.csv'.format(self.directory)
+        err_file = '{0}/loss.csv'.format(self.directory)
+        out = open(out_file, 'w+')
+        err = open(err_file, 'w+')
+        p = Popen(args, stdout=out, stderr=err)
+        p.wait()
+        out.close()
+        err.close()
+        assert (p.poll() != None)
+
 
 def run(nb_headers=5, step=5):
-    offer_load = 100000
-    p = BenchmarkParser(nb_headers, offer_load)
-    p.clean()
-    p.configure()
-    p.make_switch()
-    p.run_ovsdb_server()
-    p.run_ovs_vswitchd()
-    time.sleep(1)
-    p.add_flows('vs_commands.txt')
-    p.add_flows('commands.txt')
-    print "switch is running"
-    time.sleep(60)
-    p.stop_ovs_switch('sudo pkill ovsdb-server')
-    p.stop_ovs_switch('sudo pkill ovs-vswitchd')
+    offer_load = 500000
+    while (offer_load < 4000000):
+        p = BenchmarkParser(nb_headers, offer_load)
+        # p.clean()
+        # p.configure()
+        # p.make_switch()
+        p.run_ovsdb_server()
+        p.run_ovs_vswitchd()
+        time.sleep(1)
+        p.add_flows('vs_commands.txt')
+        p.add_flows('commands.txt')
+        print "switch is running"
+        p.run_remote_pktgen()
+        # time.sleep(240)
+        p.stop_ovs_switch('sudo pkill ovsdb-server')
+        p.stop_ovs_switch('sudo pkill ovs-vswitchd')
+        time.sleep(10)
+        offer_load += 500000
 
 if __name__=='__main__':
     parser = argparse.ArgumentParser(description='P4 Benchmark')

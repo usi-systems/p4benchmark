@@ -47,6 +47,8 @@ sudo rm -rf $tmpdir
 
 cd behavioral-model
 ./autogen.sh
+# better performance for behavioral-model
+#./configure --disable-logging-macros --disable-elogger CXXFLAGS=-O3
 ./configure
 sudo make
 

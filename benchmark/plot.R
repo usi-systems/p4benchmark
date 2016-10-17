@@ -54,9 +54,24 @@ plot_latency <- function(input, at_throughput) {
     scale_x_continuous(labels=comma, breaks=pretty_breaks(n = 8))
 }
 
+plot_latency_all <- function(input) {
+    df <- read.csv(input, header=TRUE, sep="")
+    print(df)
+    df$load <- df$load / 100000
+    pdf('latency.pdf')
+    ggplot(df, aes(x=var, y=latency)) +
+    geom_line() +
+    facet_grid(. ~ load, scales='free', space='free') +
+    labs(x="Number of Headers", y="Latency (\U00B5s) ")+
+    theme_bw() +
+    my_theme() +
+    scale_y_continuous(labels=comma) +
+    scale_x_continuous(labels=comma, breaks=pretty_breaks(n = 8))
+}
 
 
 args <- commandArgs(trailingOnly = TRUE)
-plot_throughput(args[1])
-plot_latency(args[2], 200000)
+# plot_throughput(args[1])
+# plot_latency(args[2], 200000)
 
+plot_latency_all(args[1])

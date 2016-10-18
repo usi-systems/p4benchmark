@@ -127,7 +127,7 @@ class BenchmarkParser(P4Benchmark):
         time.sleep(5)
 
     def run_remote_pktgen(self):
-        cmd = "ssh -t {0} 'sudo {1} -p {2} -s eth1 -i eth2 -c {3} -t {4}'".format('pktgen',
+        cmd = "ssh -t {0} 'sudo {1} -p {2} -s eth1 -i eth2 -c {3} -t {4}' 2> /tmp/pktgen".format('pktgen',
                 '/home/vagrant/dpl-benchmark/pktgen/build/p4benchmark',
                 '/home/vagrant/dpl-benchmark/pisces/output/test.pcap',
                 self.nb_packets,
@@ -136,14 +136,20 @@ class BenchmarkParser(P4Benchmark):
         print cmd
         args = shlex.split(cmd)
         out_file = '{0}/latency.csv'.format(self.directory)
-        err_file = '{0}/loss.csv'.format(self.directory)
         out = open(out_file, 'w+')
-        err = open(err_file, 'w+')
-        p = Popen(args, stdout=out, stderr=err)
+        p = Popen(args, stdout=out)
         p.wait()
         out.close()
-        err.close()
         assert (p.poll() != None)
+
+        cmd = "ssh {0} 'cat /tmp/pktgen'".format('pktgen')
+        loss_info = '{0}/loss.csv'.format(self.directory)
+        loss_out = open(loss_info, 'w+')
+        print cmd
+        args = shlex.split(cmd)
+        p = Popen(args, stdout=loss_out)
+        p.wait()
+        loss_out.close()
 
 
 def run(nb_headers=5, step=5):
@@ -160,10 +166,9 @@ def run(nb_headers=5, step=5):
         p.add_flows('commands.txt')
         print "switch is running"
         p.run_remote_pktgen()
-        # time.sleep(240)
         p.stop_ovs_switch('sudo pkill ovsdb-server')
         p.stop_ovs_switch('sudo pkill ovs-vswitchd')
-        time.sleep(10)
+        time.sleep(30)
         offer_load += 500000
 
 if __name__=='__main__':

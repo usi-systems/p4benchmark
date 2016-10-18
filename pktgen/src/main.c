@@ -282,8 +282,8 @@ int main(int argc, char* argv[])
      * some to read.
      */
 
-    #define TIME_WINDOW_MS 1L
-    unsigned int max_bytes_per_window = ((config.bps * TIME_WINDOW_MS) / 1000L);
+    #define TIME_WINDOW_US 100L
+    unsigned int max_bytes_per_window = ((config.bps * TIME_WINDOW_US) / 1000000L);
 
     struct timespec window_start_time;
 
@@ -308,7 +308,7 @@ int main(int argc, char* argv[])
                 struct timespec thresh;
                 thresh.tv_sec = window_start_time.tv_sec;
                 thresh.tv_nsec = window_start_time.tv_nsec;
-                thresh.tv_nsec += TIME_WINDOW_MS * 1000000;
+                thresh.tv_nsec += TIME_WINDOW_US * 1000;
                 if (thresh.tv_nsec > 1000000000L) {
                     thresh.tv_sec += 1;
                     thresh.tv_nsec -= 1000000000L;

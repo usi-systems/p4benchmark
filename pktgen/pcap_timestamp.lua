@@ -8,18 +8,15 @@ local memory		= require "memory"
 local stats		= require "stats"
 local pcap		= require "pcap"
 
-local PKT_SIZE = 128
+local NUM_PKTS = 10^7
 
-local NUM_PKTS = 10^5
-
-local ETH_SRC ="0C:C4:7A:A3:25:34"
-local ETH_DST ="0C:C4:7A:A3:25:35"
-
+local PKT_SIZE = 60
 
 function configure(parser)
 	parser:argument("txPort", "Device use for tx."):args(1):convert(tonumber)
 	parser:argument("rxPort", "Device use for rx."):args(1):convert(tonumber)
-	parser:option("-l --load", "replay as fast as possible"):default(0):convert(tonumber):target("load")
+	parser:argument("file", "File to replay."):args(1)
+	parser:option("-l --load", "replay as fast as possible"):default(1000):convert(tonumber):target("load")
 	parser:flag("-r --repeat", "Repeat pcap file.")
 	local args = parser:parse()
 	return args
@@ -31,28 +28,28 @@ function master(args)
 	device.waitForLinks()
 	if args.load then
 		-- set the wire rate and not the payload rate
+		-- TODO: use packet size in pcap file
 		load = args.load * PKT_SIZE / (PKT_SIZE + 24)
 		txDev:getTxQueue(0):setRate(load)
-		mg.startTask("loadSlave", txDev:getTxQueue(0), true)
+		mg.startTask("loadSlave", txDev:getTxQueue(0), true, args.file)
 		mg.sleepMillis(500)
 	end
 	runTest(txDev:getTxQueue(1), rxDev:getRxQueue(1))
 end
 
-function loadSlave(queue, showStats)
-	local mem = memory.createMemPool(function(buf)
-		buf:getEthPacket():fill{
-			ethSrc = ETH_SRC,
-			ethDst = ETH_DST
-		}
-	end)
-	bufs = mem:bufArray()
+function loadSlave(queue, showStats, file)
+	local mempool = memory:createMemPool()
+	local bufs = mempool:bufArray()
+	local pcapFile = pcap:newReader(file)
 	local ctr = stats:newDevTxCounter(queue.dev, "plain")
 	local i = 0
 	while i < NUM_PKTS and mg.running() do
-		bufs:alloc(PKT_SIZE)
-		queue:send(bufs)
-		i = i + 1
+		local n = pcapFile:read(bufs)
+		if n == 0 then
+			pcapFile:reset()
+		end
+		queue:sendN(bufs, n)
+		i = i + n
 		if showStats then ctr:update() end
 	end
 	if showStats then ctr:finalize() end

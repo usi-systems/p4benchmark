@@ -6,7 +6,7 @@ MAX_NUM_FIELDS = 40
 MAX_NUM_HEADERS = 40
 
 def add_eth_ip_udp_headers(dport):
-    eth = Ether(dst='00:00:00:00:00:02')
+    eth = Ether(src='0C:C4:7A:A3:25:34', dst='0C:C4:7A:A3:25:35')
     ip  = IP(dst='10.0.0.2', ttl=64)
     udp = UDP(sport=65231, dport=dport)
     pkt = eth / ip / udp

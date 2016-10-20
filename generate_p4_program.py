@@ -49,8 +49,6 @@ def main():
         benchmark_modification(args.headers, args.fields, args.mod_type)
     elif args.memory:
         benchmark_memory(args.registers, args.element_width, args.nb_element, args.nb_operations, args.operation_op)
-    else:
-        parser.print_help()
 
 if __name__=='__main__':
     main()

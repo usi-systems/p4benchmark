@@ -103,7 +103,7 @@ class P4Benchmark(object):
         self.add_rules(json_path, commands, 3)
 
     def run_packet_generator(self):
-        cmd = 'sudo {0} -p {1} -i veth4 -c {2} -t {3}'.format(self.pktgen,
+        cmd = 'sudo {0} -p {1} -i veth4 -c {2} -t {3} -f "udp and dst port 37009"'.format(self.pktgen,
             'output/test.pcap', self.nb_packets, self.offer_load)
         print cmd
         args = shlex.split(cmd)

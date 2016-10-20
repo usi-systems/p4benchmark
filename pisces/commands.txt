@@ -1,2 +1,3 @@
-ovs-ofctl --protocols=OpenFlow15 add-flow br0 "table=0,priority=32768,ethernet_dstAddr=0x1 actions=set_field:1->reg0,deparse,output:NXM_NX_REG0[]"
-ovs-ofctl --protocols=OpenFlow15 add-flow br0 "table=0,priority=32768,ethernet_dstAddr=0x2 actions=set_field:2->reg0,deparse,output:NXM_NX_REG0[]"
+ovs-ofctl --protocols=OpenFlow15 del-flows br0
+ovs-ofctl --protocols=OpenFlow15 add-flow br0 "table=0,priority=32768,ethernet_dstAddr=0x0CC47AA32534 actions=set_field:1->reg0,deparse,output:NXM_NX_REG0[]"
+ovs-ofctl --protocols=OpenFlow15 add-flow br0 "table=0,priority=32768,ethernet_dstAddr=0x0CC47AA32535 actions=set_field:2->reg0,deparse,output:NXM_NX_REG0[]"

@@ -76,7 +76,7 @@ class P4vSwitch(object):
         self.add_flows('vs_commands.txt')
         self.add_flows('commands.txt')
         vswitchd.wait()
-ovsdb.wait()
+	ovsdb.wait()
 
     def stop_all(self):
         self.stop_ovs_vswitchd()

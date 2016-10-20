@@ -45,6 +45,9 @@ for (d in dirs) {
     }
 }
 
+data = sprintf("%s/data.csv", args[1])
+write.table(dfs, file=data, quote=FALSE, row.names=FALSE)
+
 # Find mean throughput and latency
 mydf <-aggregate(dfs[1:2], by=list(var=dfs$variable, load=dfs$offer_load,
                 lost=dfs$packet_lost), FUN=mean)

@@ -59,9 +59,9 @@ plot_latency_all <- function(input) {
     print(df)
     df$load <- df$load / 100000
     pdf('latency.pdf')
-    ggplot(df, aes(x=var, y=latency)) +
+    ggplot(df, aes(x=load, y=latency)) +
     geom_line() +
-    facet_grid(. ~ load, scales='free', space='free') +
+    # facet_grid(. ~ load, scales='free', space='free') +
     labs(x="Number of Headers", y="Latency (\U00B5s) ")+
     theme_bw() +
     my_theme() +
@@ -69,9 +69,40 @@ plot_latency_all <- function(input) {
     scale_x_continuous(labels=comma, breaks=pretty_breaks(n = 8))
 }
 
+plot_latency_cdf <- function(input) {
+    df <- read.csv(input, header=TRUE, sep="", , colClasses=c('numeric', 'numeric', 'numeric', 'numeric', 'numeric'))
+    # df$offer_load <- df$offer_load * 8 / 1000000
+    df <- df[df$packet_lost == 0,]
+    # df <- df[df$offer_load == 500000,]
+    pdf('cdf_latency.pdf')
+    # df <- ddply(df, c('variable', 'offer_load', 'packet_lost'), summarise, latency=quantile(latency, c(.99)))
+    print(df)
+    ggplot(df, aes(x=latency, colour=factor(offer_load))) +
+    stat_ecdf(aes(linetype=factor(offer_load), colour=factor(offer_load))) +
+    facet_grid(. ~ variable) +
+    theme_bw()
+}
+
+plot_latency_percentile <- function(input) {
+    df <- read.csv(input, header=TRUE, sep="", , colClasses=c('numeric', 'numeric', 'numeric', 'numeric', 'numeric'))
+    df$offer_load <- df$offer_load * 8 / 1000000
+    df <- df[df$packet_lost == 0,]
+    # df <- df[df$offer_load == 500000,]
+    pdf('cdf_latency.pdf')
+    df <- ddply(df, c('variable', 'offer_load', 'packet_lost'), summarise, latency=quantile(latency, c(.99)))
+    print(df)
+    ggplot(df, aes(x=offer_load, y=latency, colour=factor(variable))) +
+    geom_line() +
+    theme_bw() +
+    my_theme() +
+    theme(legend.position = "none")
+}
+
 
 args <- commandArgs(trailingOnly = TRUE)
 # plot_throughput(args[1])
 # plot_latency(args[2], 200000)
 
-plot_latency_all(args[1])
+# plot_latency_all(args[1])
+# plot_latency_cdf(args[1])
+plot_latency_percentile(args[1])

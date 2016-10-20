@@ -6,6 +6,7 @@ import shlex
 import time
 import argparse
 from parsing.bm_parser import benchmark_parser_header
+from action_complexity.bm_mod_field import benchmark_field_write
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
@@ -17,7 +18,9 @@ class P4Benchmark(object):
         pypath = os.environ.get('PYTHONPATH')
         p4bench = os.environ.get('P4BENCHMARK_ROOT')
         self.ovs = os.environ.get('OVS_PATH')
+	print 'OVS_PATH', self.ovs
         self.dpdk = os.environ.get('DPDK_BUILD')
+	print 'DPDK_BUILD', self.dpdk
         bmv2 = os.path.join(p4bench, 'behavioral-model')
         self.p4c = os.path.join(p4bench, 'p4c-bm/p4c_bm/__main__.py')
         self.switch_path = os.path.join(bmv2, 'targets/simple_switch/simple_switch')
@@ -30,33 +33,14 @@ class P4Benchmark(object):
         self.directory = directory
         self.offer_load = offer_load
 
-    def run_pisces_switch(self):
-        prog = 'main'
-        commands = 'output/commands.txt'
-        cmd = 'sudo {0} {1} -i0@veth0 -i1@veth2 -i 2@veth4 {2}'.format(self.switch_path,
-                json_path, self.log_level)
-        print cmd
-        args = shlex.split(cmd)
-        out_file = '{0}/bmv2.log'.format(self.directory)
-        with open(out_file, 'w') as out:
-            out.write('Number of packets: %d\n' % self.nb_packets)
-            out.write('Offered load:  %d\n' % self.offer_load)
-            self.p = Popen(args, stdout=out, stderr=out, shell=False)
-        assert (self.p.poll() == None)
-        # wait for the switch to start
-        time.sleep(2)
-        # insert rules: retry 3 times if not succeed
-        self.add_rules(json_path, commands, 3)
+class BenchmarkPisces(P4Benchmark):
 
-
-class BenchmarkParser(P4Benchmark):
-
-    def __init__(self, nb_header, offer_load):
-        parent_dir = 'result/parse_header'
-        directory = '{0}/{1}/{2}'.format(parent_dir, nb_header, offer_load)
-        super(BenchmarkParser, self).__init__(parent_dir, directory, offer_load)
-        self.nb_header = nb_header
-        self.nb_field = 2
+    def __init__(self, nb_field, offer_load):
+        parent_dir = 'result/'
+        directory = '{0}/{1}/{2}'.format(parent_dir, nb_field, offer_load)
+        super(BenchmarkPisces, self).__init__(parent_dir, directory, offer_load)
+        self.nb_field = nb_field
+        self.nb_header = 1
         if not os.path.exists(self.directory):
             os.makedirs(self.directory)
 
@@ -66,7 +50,7 @@ class BenchmarkParser(P4Benchmark):
         p.wait()
 
     def configure(self):
-        ret = benchmark_parser_header(self.nb_header, self.nb_field)
+        ret = benchmark_field_write(self.nb_header, self.nb_field)
         assert (ret == True)
         prog = 'main'
         cmd =   """{0}/configure --with-dpdk={1}
@@ -82,7 +66,7 @@ class BenchmarkParser(P4Benchmark):
             assert (p.returncode == 0)
 
     def make_switch(self):
-        cmd = "make -j2"
+        cmd = "make -j8"
         print cmd
         out_file = '{0}/pisces_make.log'.format(self.directory)
         with open(out_file, 'w+') as out:
@@ -127,58 +111,29 @@ class BenchmarkParser(P4Benchmark):
         assert (self.ovsdb_server.poll() != None)
         time.sleep(5)
 
-    def run_remote_pktgen(self):
-        cmd = "ssh -t {0} 'sudo {1} -p {2} -s eth1 -i eth2 -c {3} -t {4}' 2> /tmp/pktgen".format('pktgen',
-                '/home/vagrant/dpl-benchmark/pktgen/build/p4benchmark',
-                '/home/vagrant/dpl-benchmark/pisces/output/test.pcap',
-                self.nb_packets,
-                self.offer_load)
 
-        print cmd
-        args = shlex.split(cmd)
-        out_file = '{0}/latency.csv'.format(self.directory)
-        out = open(out_file, 'w+')
-        p = Popen(args, stdout=out)
-        p.wait()
-        out.close()
-        assert (p.poll() != None)
-
-        cmd = "ssh {0} 'cat /tmp/pktgen'".format('pktgen')
-        loss_info = '{0}/loss.csv'.format(self.directory)
-        loss_out = open(loss_info, 'w+')
-        print cmd
-        args = shlex.split(cmd)
-        p = Popen(args, stdout=loss_out)
-        p.wait()
-        loss_out.close()
-
-
-def run(nb_headers=5, step=5):
-    offer_load = 500000
-    p = BenchmarkParser(nb_headers, offer_load)
+def run(nb_fields=4, step=4):
+    offer_load = 1000
+    p = BenchmarkPisces(nb_fields, offer_load)
     p.clean()
     p.configure()
     p.make_switch()
-    while (offer_load < 4000000):
-	p = BenchmarkParser(nb_headers, offer_load)
-        p.run_ovsdb_server()
-        p.run_ovs_vswitchd()
-        time.sleep(1)
-        p.add_flows('vs_commands.txt')
-        p.add_flows('commands.txt')
-        print "switch is running"
-        p.run_remote_pktgen()
-        p.stop_ovs_switch('sudo pkill ovsdb-server')
-        p.stop_ovs_switch('sudo pkill ovs-vswitchd')
-        time.sleep(30)
-        offer_load += 500000
+    p.run_ovsdb_server()
+    p.run_ovs_vswitchd()
+    time.sleep(1)
+    p.add_flows('vs_commands.txt')
+    p.add_flows('commands.txt')
+    print "switch is running"
+    time.sleep(2)
+    p.stop_ovs_switch('sudo pkill ovsdb-server')
+    p.stop_ovs_switch('sudo pkill ovs-vswitchd')
 
 if __name__=='__main__':
     parser = argparse.ArgumentParser(description='P4 Benchmark')
-    parser.add_argument('-n', '--headers', default=5, type=int,
-                        help='number of headers from start')
-    parser.add_argument('-s', '--step', default=5, type=int,
-                        help='number of headers to add in iteration')
+    parser.add_argument('-n', '--fields', default=4, type=int,
+                        help='number of fields')
+    parser.add_argument('-s', '--step', default=4, type=int,
+                        help='number of fields to add in iteration')
     args = parser.parse_args()
 
-    run(args.headers, args.step)
+    run(args.fields, args.step)

@@ -66,7 +66,7 @@ class BenchmarkPisces(P4Benchmark):
             assert (p.returncode == 0)
 
     def make_switch(self):
-        cmd = "make -j8"
+        cmd = "make -j4"
         print cmd
         out_file = '{0}/pisces_make.log'.format(self.directory)
         with open(out_file, 'w+') as out:

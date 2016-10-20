@@ -24,7 +24,7 @@ class P4Benchmark(object):
         self.cli_path = os.path.join(bmv2, 'tools/runtime_CLI.py')
         self.pktgen = os.path.join(p4bench, 'pktgen/build/p4benchmark')
         self.analyse = os.path.join(p4bench, 'benchmark/analyse.R')
-        self.nb_packets = 1000000
+        self.nb_packets = 100000
         self.log_level = ''
         self.parent_dir = parent_dir
         self.directory = directory
@@ -82,7 +82,7 @@ class BenchmarkParser(P4Benchmark):
             assert (p.returncode == 0)
 
     def make_switch(self):
-        cmd = "make -j2"
+        cmd = "make -j4"
         print cmd
         out_file = '{0}/pisces_make.log'.format(self.directory)
         with open(out_file, 'w+') as out:
@@ -159,19 +159,15 @@ def run(nb_headers=5, step=5):
     p.clean()
     p.configure()
     p.make_switch()
-    while (offer_load < 4000000):
-	p = BenchmarkParser(nb_headers, offer_load)
-        p.run_ovsdb_server()
-        p.run_ovs_vswitchd()
-        time.sleep(1)
-        p.add_flows('vs_commands.txt')
-        p.add_flows('commands.txt')
-        print "switch is running"
-        p.run_remote_pktgen()
-        p.stop_ovs_switch('sudo pkill ovsdb-server')
-        p.stop_ovs_switch('sudo pkill ovs-vswitchd')
-        time.sleep(30)
-        offer_load += 500000
+    p.run_ovsdb_server()
+    p.run_ovs_vswitchd()
+    time.sleep(1)
+    p.add_flows('vs_commands.txt')
+    p.add_flows('commands.txt')
+    print "switch is running"
+    p.run_remote_pktgen()
+    p.stop_ovs_switch('sudo pkill ovsdb-server')
+    p.stop_ovs_switch('sudo pkill ovs-vswitchd')
 
 if __name__=='__main__':
     parser = argparse.ArgumentParser(description='P4 Benchmark')

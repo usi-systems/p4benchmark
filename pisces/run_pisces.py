@@ -14,39 +14,17 @@ class P4Benchmark(object):
         assert os.environ.get('P4BENCHMARK_ROOT')
         assert os.environ.get('PYTHONPATH')
         assert os.environ.get('OVS_PATH')
+        assert os.environ.get('DPDK_BUILD')
         pypath = os.environ.get('PYTHONPATH')
         p4bench = os.environ.get('P4BENCHMARK_ROOT')
         self.ovs = os.environ.get('OVS_PATH')
         self.dpdk = os.environ.get('DPDK_BUILD')
-        bmv2 = os.path.join(p4bench, 'behavioral-model')
-        self.p4c = os.path.join(p4bench, 'p4c-bm/p4c_bm/__main__.py')
-        self.switch_path = os.path.join(bmv2, 'targets/simple_switch/simple_switch')
-        self.cli_path = os.path.join(bmv2, 'tools/runtime_CLI.py')
         self.pktgen = os.path.join(p4bench, 'pktgen/build/p4benchmark')
-        self.analyse = os.path.join(p4bench, 'benchmark/analyse.R')
         self.nb_packets = 100000
         self.log_level = ''
         self.parent_dir = parent_dir
         self.directory = directory
         self.offer_load = offer_load
-
-    def run_pisces_switch(self):
-        prog = 'main'
-        commands = 'output/commands.txt'
-        cmd = 'sudo {0} {1} -i0@veth0 -i1@veth2 -i 2@veth4 {2}'.format(self.switch_path,
-                json_path, self.log_level)
-        print cmd
-        args = shlex.split(cmd)
-        out_file = '{0}/bmv2.log'.format(self.directory)
-        with open(out_file, 'w') as out:
-            out.write('Number of packets: %d\n' % self.nb_packets)
-            out.write('Offered load:  %d\n' % self.offer_load)
-            self.p = Popen(args, stdout=out, stderr=out, shell=False)
-        assert (self.p.poll() == None)
-        # wait for the switch to start
-        time.sleep(2)
-        # insert rules: retry 3 times if not succeed
-        self.add_rules(json_path, commands, 3)
 
 
 class BenchmarkParser(P4Benchmark):

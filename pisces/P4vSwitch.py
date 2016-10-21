@@ -19,7 +19,7 @@ class P4vSwitch(object):
         cmd  = "{0}/configure --with-dpdk={1} ".format(self.ovs, self.dpdk)
         cmd += "CFLAGS=\"-g -O2 -Wno-cast-align\" "
         cmd += "p4inputfile={0} ".format(self.p4_program)
-        cmd += "p4outputdir={0}/include/p4/src".format(dir_path)
+        cmd += "p4outputdir=./include/p4/src"
         print cmd
         p = Popen(shlex.split(cmd))
         p.wait()
@@ -74,11 +74,11 @@ class P4vSwitch(object):
         ovsdb = self.start_ovsdb_server()
         vswitchd = self.start_ovs_vswitchd()
         time.sleep(1)
-        self.add_flows('vs_commands.txt')
+        self.add_flows(os.path.join(dir_path, 'vs_commands.txt'))
         if (os.path.isfile(self.rules)):
 		self.add_flows(self.rules)
-	else:
-		print "Rules are not added"
+        else:
+            print "Rules are not added"
         vswitchd.wait()
 	ovsdb.wait()
 
@@ -97,7 +97,7 @@ if __name__=='__main__':
                         help='kill ovsdb server and vswitchd')
     parser.add_argument('-p', '--p4-program', default='', type=str,
                         help='path to the P4 program')
-    parser.add_argument('-r', '--rules', default='commands.txt', type=str,
+    parser.add_argument('-r', '--rules', default='commands.txt',
                         help='Rules for the program')
     args = parser.parse_args()
 

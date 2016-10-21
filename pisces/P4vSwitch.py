@@ -65,12 +65,15 @@ class P4vSwitch(object):
     	p = Popen(args)
     	p.wait()
 
-    def run(self):
+    def compile(self):
         if (os.path.isfile(self.p4_program)):
             self.clean()
             self.configure()
             self.make_switch()
+        else:
+            print "'%s' is not a valid file" % self.p4_program
 
+    def run(self):
         ovsdb = self.start_ovsdb_server()
         vswitchd = self.start_ovs_vswitchd()
         time.sleep(1)
@@ -95,6 +98,8 @@ if __name__=='__main__':
     parser = argparse.ArgumentParser(description='P4 Benchmark')
     parser.add_argument('-k', '--kill-ovs', default=False, action='store_true',
                         help='kill ovsdb server and vswitchd')
+    parser.add_argument('-c', '--compile', default=False, action='store_true',
+                        help='compile the P4 program for Pisces')
     parser.add_argument('-p', '--p4-program', default='', type=str,
                         help='path to the P4 program')
     parser.add_argument('-r', '--rules', default='commands.txt',
@@ -105,6 +110,8 @@ if __name__=='__main__':
     pisces = P4vSwitch(args.p4_program, args.rules)
 
     if args.kill_ovs:
-	pisces.stop_all()
+        pisces.stop_all()
+    elif args.compile:
+        pisces.compile()
     else:
         pisces.run()

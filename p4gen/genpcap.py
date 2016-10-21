@@ -12,14 +12,14 @@ def add_eth_ip_udp_headers(dport):
     pkt = eth / ip / udp
     return pkt
 
-def add_layers(nb_fields, nb_headers):
+def add_layers(nb_fields, max_headers, nb_headers):
     class P4Bench(Packet):
         name = "P4Bench Message"
         fields_desc =  []
         for i in range(nb_fields):
             fields_desc.append(ShortField('field_%d' %i , 0))
     layers = ''
-    for i in range(MAX_NUM_HEADERS):
+    for i in range(max_headers):
         if i < (nb_headers - 1):
             layers = layers / P4Bench(field_0=1)
         else:
@@ -36,7 +36,7 @@ def vary_header_field(nb_fields):
 
 def get_parser_header_pcap(nb_fields, nb_headers, udp_dest_port, out_dir):
     pkt = add_eth_ip_udp_headers(udp_dest_port)
-    pkt /= add_layers(nb_fields, nb_headers)
+    pkt /= add_layers(nb_fields, MAX_NUM_HEADERS, nb_headers)
     wrpcap('%s/test.pcap' % out_dir, pkt)
 
 def get_parser_field_pcap(nb_fields, udp_dest_port, out_dir):
@@ -88,10 +88,10 @@ def get_packetmod_pcap(nb_headers, nb_fields, mod_type, out_dir):
         pkt = add_eth_ip_udp_headers(15432)
     elif mod_type == 'rm':
         pkt = add_eth_ip_udp_headers(0x9091)
-        pkt /= add_layers(nb_fields, nb_headers)
+        pkt /= add_layers(nb_fields, MAX_NUM_HEADERS, nb_headers)
     elif mod_type == 'mod':
         pkt = add_eth_ip_udp_headers(0x9091)
-        pkt /= add_layers(nb_fields, nb_headers)
+        pkt /= add_layers(nb_fields, nb_headers, nb_headers)
 
     wrpcap('%s/test.pcap' % out_dir, pkt)
 

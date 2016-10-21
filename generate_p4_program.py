@@ -6,6 +6,7 @@ from parsing.bm_parser import benchmark_parser_header, benchmark_parser_with_hea
 from processing.bm_pipeline import benchmark_pipeline
 from state_access.bm_memory import benchmark_memory
 from packet_modification.bm_modification import benchmark_modification
+from action_complexity.bm_mod_field import benchmark_field_write
 
 def main():
     parser = argparse.ArgumentParser(description='A programs that generate a'
@@ -20,6 +21,8 @@ def main():
                             help='memory access benchmark')
     parser.add_argument('--mod-packet', default=False, action='store_true',
                             help='packet modification benchmark')
+    parser.add_argument('--action-complexity', default=False, action='store_true',
+                            help='action complexity benchmark')
     parser.add_argument('--tables', default=1, type=int, help='number of tables')
     parser.add_argument('--table-size', default=1, type=int,
                             help='number of rules in the table')
@@ -49,6 +52,10 @@ def main():
         benchmark_modification(args.headers, args.fields, args.mod_type)
     elif args.memory:
         benchmark_memory(args.registers, args.element_width, args.nb_element, args.nb_operations, args.operation_op)
+    elif args.action_complexity:
+        if args.fields < args.nb_operations:
+            args.fields = args.nb_operations
+        benchmark_field_write(args.nb_operations, args.fields)
 
 if __name__=='__main__':
     main()

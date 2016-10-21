@@ -2,9 +2,9 @@
 --  Connect cables of different length between two ports (or a fiber loopback cable on a single port) to use this.
 local mg		= require "moongen"
 local ts		= require "timestamping"
-local device		= require "device"
+local device	= require "device"
 local hist		= require "histogram"
-local memory		= require "memory"
+local memory	= require "memory"
 local stats		= require "stats"
 local pcap		= require "pcap"
 

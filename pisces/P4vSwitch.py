@@ -9,10 +9,11 @@ import argparse
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
 class P4vSwitch(object):
-    def __init__(self, p4_program=''):
+    def __init__(self, p4_program='', rules=''):
         self.ovs = os.environ.get('OVS_PATH')
         self.dpdk = os.environ.get('DPDK_BUILD')
         self.p4_program = p4_program
+        self.rules = rules
 
     def configure(self):
         cmd  = "{0}/configure --with-dpdk={1} ".format(self.ovs, self.dpdk)
@@ -74,7 +75,10 @@ class P4vSwitch(object):
         vswitchd = self.start_ovs_vswitchd()
         time.sleep(1)
         self.add_flows('vs_commands.txt')
-        self.add_flows('commands.txt')
+        if (os.path.isfile(self.rules)):
+		self.add_flows(self.rules)
+	else:
+		print "Rules are not added"
         vswitchd.wait()
 	ovsdb.wait()
 
@@ -93,10 +97,12 @@ if __name__=='__main__':
                         help='kill ovsdb server and vswitchd')
     parser.add_argument('-p', '--p4-program', default='', type=str,
                         help='path to the P4 program')
+    parser.add_argument('-r', '--rules', default='commands.txt', type=str,
+                        help='Rules for the program')
     args = parser.parse_args()
 
     print args.p4_program
-    pisces = P4vSwitch(args.p4_program)
+    pisces = P4vSwitch(args.p4_program, args.rules)
 
     if args.kill_ovs:
 	pisces.stop_all()

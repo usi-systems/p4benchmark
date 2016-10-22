@@ -13,6 +13,12 @@ def gen_p4_program(host, path, fields, output_dir):
     ssh = subprocess.Popen(shlex.split(cmd))
     ssh.wait()
 
+def gen_p4_parser(host, path, headers, output_dir):
+    cmd = "ssh {0} 'mkdir -p temp; cd temp; python {1}/generate_p4_program.py --parser-header --headers {2}'".format(host, path, headers)
+    print cmd
+    ssh = subprocess.Popen(shlex.split(cmd))
+    ssh.wait()
+
 
 def compile_p4_program(host, path, output_dir):
     cmd = "ssh {0} 'cd temp; python {1}/pisces/P4vSwitch.py -p ./output/main.p4 -c'".format(host, path)
@@ -113,6 +119,8 @@ if __name__ == '__main__':
     parser.add_argument('output', help='output directory of the experiment')
     parser.add_argument('--fields', type=int, default=2,
                 help='the number of fields for the benchmark action-complexity')
+    parser.add_argument('--headers', type=int, default=2,
+                help='the number of headers for the benchmark')
     parser.add_argument('--path', default='/home/danghu/workspace/p4benchmark',
                 help='path to p4benchmark on the remote server')
     parser.add_argument('--moongen', default='/home/danghu/MoonGen',
@@ -121,17 +129,21 @@ if __name__ == '__main__':
                 help='use p4benchmark packet generator')
     args = parser.parse_args()
 
-    while args.fields <= 20:
-        variable_path = '{0}/{1}'.format(args.output, args.fields)
+    # variable = args.fields
+    variable = args.headers
+    while variable <= 20:
+        variable_path = '{0}/{1}'.format(args.output, variable)
         if not os.path.exists(variable_path):
            os.makedirs(variable_path)
 
-        gen_p4_program('node97', args.path, args.fields, variable_path)
-        gen_p4_program('node98', args.path, args.fields, variable_path)
+        # gen_p4_program('node97', args.path, variable, variable_path)
+        # gen_p4_program('node98', args.path, variable, variable_path)
+        gen_p4_parser('node97', args.path, variable, variable_path)
+        gen_p4_parser('node98', args.path, variable, variable_path)
         compile_p4_program('node97', args.path, variable_path)
 
         if args.pktgen:
             run_experiment_with_pktgen(args.path, variable_path)
         else:
             run_experiment_with_MoonGen(args.path, args.moongen, variable_path)
-        args.fields += 2
+        variable += 2

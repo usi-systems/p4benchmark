@@ -19,6 +19,12 @@ def gen_p4_parser(host, path, headers, output_dir):
     ssh = subprocess.Popen(shlex.split(cmd))
     ssh.wait()
 
+def gen_p4_mod_packet(host, path, headers, output_dir):
+    cmd = "ssh {0} 'mkdir -p temp; cd temp; python {1}/generate_p4_program.py --mod-packet --mod-type add --headers {2}'".format(host, path, headers)
+    print cmd
+    ssh = subprocess.Popen(shlex.split(cmd))
+    ssh.wait()
+
 
 def compile_p4_program(host, path, output_dir):
     cmd = "ssh {0} 'cd temp; python {1}/pisces/P4vSwitch.py -p ./output/main.p4 -c'".format(host, path)
@@ -138,8 +144,10 @@ if __name__ == '__main__':
 
         # gen_p4_program('node97', args.path, variable, variable_path)
         # gen_p4_program('node98', args.path, variable, variable_path)
-        gen_p4_parser('node97', args.path, variable, variable_path)
-        gen_p4_parser('node98', args.path, variable, variable_path)
+        # gen_p4_parser('node97', args.path, variable, variable_path)
+        # gen_p4_parser('node98', args.path, variable, variable_path)
+        gen_p4_mod_packet('node97', args.path, variable, variable_path)
+        gen_p4_mod_packet('node98', args.path, variable, variable_path)
         compile_p4_program('node97', args.path, variable_path)
 
         if args.pktgen:

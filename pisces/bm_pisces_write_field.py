@@ -122,7 +122,7 @@ def run(nb_fields=4, step=4):
     p.run_ovs_vswitchd()
     time.sleep(1)
     p.add_flows('vs_commands.txt')
-    p.add_flows('commands.txt')
+    p.add_flows('write_fields.txt')
     print "switch is running"
     time.sleep(2)
     p.stop_ovs_switch('sudo pkill ovsdb-server')

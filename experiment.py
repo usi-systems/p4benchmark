@@ -2,7 +2,7 @@
 import argparse
 import subprocess
 import shlex
-import os
+import os, sys
 from threading import Timer
 import time
 
@@ -32,9 +32,15 @@ def compile_p4_program(host, path, output_dir):
     ssh = subprocess.Popen(shlex.split(cmd), shell=False)
     ssh.wait()
 
+def dump_flows(host):
+    cmd = "ssh -t {0} 'sudo temp/utilities/ovs-ofctl --protocols=OpenFlow15 dump-flows br0'".format(host)
+    print cmd
+    ssh = subprocess.Popen(shlex.split(cmd), shell=False)
+    ssh.wait()
 
-def run_pisces(host, path, output_dir):
-    cmd = "ssh {0} 'cd temp; python {1}/pisces/P4vSwitch.py -r {1}/pisces/write_fields.txt'".format(host, path)
+
+def run_pisces(host, path, output_dir, rule_file):
+    cmd = "ssh {0} 'cd temp; python {1}/pisces/P4vSwitch.py -r {1}/pisces/{2}'".format(host, path, rule_file)
     print cmd
     with open('%s/switch.txt' % (output_dir), 'w') as out:
         ssh = subprocess.Popen(shlex.split(cmd),
@@ -63,7 +69,8 @@ def copy_histogram(host, moongen_path, output_dir):
 
 def run_my_pktgen(host, path, output_dir, mbps=1000):
     Bps = mbps * (10**6) / 8
-    cmd = "ssh -t {0} 'sudo {1}/pktgen/build/p4benchmark -p temp/output/test.pcap -s eth3 -i eth4 -f \"udp and dst port 37009\" -c 10000000 -t {2} 2> /tmp/pktgen'".format(host, path, Bps)
+    # cmd = "ssh -t {0} 'sudo {1}/pktgen/build/p4benchmark -p temp/output/test.pcap -s eth3 -i eth4 -f \"udp and dst port 37009\" -c 10000000 -t {2} 2> /tmp/pktgen'".format(host, path, Bps)
+    cmd = "ssh -t {0} 'sudo {1}/pktgen/build/p4benchmark -p temp/output/test.pcap -s eth3 -i eth4 -f \"udp\" -c 10000000 -t {2} 2> /tmp/pktgen'".format(host, path, Bps)
     print cmd
     with open('%s/latency.csv' % (output_dir), 'w') as out:
         ssh = subprocess.Popen(shlex.split(cmd),
@@ -101,32 +108,40 @@ def run_experiment_with_MoonGen(path, moongen_path, variable_path):
         moongen.wait()
         copy_histogram('node98', moongen_path, output_path)
 
+        dump_flows('node97')
         stop_pisces('node97', path)
         switch.wait()
         # wait 10s before starting new experiments
         time.sleep(5)
         load += 1000
 
-def run_experiment_with_pktgen(path, variable_path):
-    load = 100
+def run_experiment_with_pktgen(path, variable_path, rule_file):
+    load = 500
     output_path = '{0}/{1}'.format(variable_path, load)
     if not os.path.exists(output_path):
         os.makedirs(output_path)
 
-    switch = run_pisces('node97', path, output_path)
+    switch = run_pisces('node97', path, output_path, rule_file)
     # wait for switch to come up
     time.sleep(5)
     run_my_pktgen('node98', path, output_path, load)
+    dump_flows('node97')
     stop_pisces('node97', path)
     switch.wait()
+
+features = ['parse-field', 'set-field', 'modify']
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Run P4 benchmark experiment.')
     parser.add_argument('output', help='output directory of the experiment')
+    parser.add_argument('--feature', choices=features,
+                help='select a feature for benchmarking')
     parser.add_argument('--fields', type=int, default=2,
-                help='the number of fields for the benchmark action-complexity')
+                help='the number of fields for the benchmarking action-complexity')
     parser.add_argument('--headers', type=int, default=2,
-                help='the number of headers for the benchmark')
+                help='the number of headers for benchmarking packet modification')
+    parser.add_argument('--actions', type=int, default=2,
+                help='the number of actions for benchmarking parse-field')
     parser.add_argument('--path', default='/home/danghu/workspace/p4benchmark',
                 help='path to p4benchmark on the remote server')
     parser.add_argument('--moongen', default='/home/danghu/MoonGen',
@@ -135,23 +150,41 @@ if __name__ == '__main__':
                 help='use p4benchmark packet generator')
     args = parser.parse_args()
 
-    # variable = args.fields
-    variable = args.headers
+
+    if args.feature == features[0]:
+        variable = args.fields
+    elif args.feature == features[1]:
+        variable = args.actions
+    elif args.feature == features[2]:
+        variable = args.headers
+    else:
+        args.print_usages()
+        sys.exit(-1)
+
     while variable <= 20:
         variable_path = '{0}/{1}'.format(args.output, variable)
         if not os.path.exists(variable_path):
            os.makedirs(variable_path)
 
-        # gen_p4_program('node97', args.path, variable, variable_path)
-        # gen_p4_program('node98', args.path, variable, variable_path)
-        # gen_p4_parser('node97', args.path, variable, variable_path)
-        # gen_p4_parser('node98', args.path, variable, variable_path)
-        gen_p4_mod_packet('node97', args.path, variable, variable_path)
-        gen_p4_mod_packet('node98', args.path, variable, variable_path)
+        if args.feature == features[0]:
+            gen_p4_program('node97', args.path, variable, variable_path)
+            gen_p4_program('node98', args.path, variable, variable_path)
+        elif args.feature == features[1]:
+            gen_p4_parser('node97', args.path, variable, variable_path)
+            gen_p4_parser('node98', args.path, variable, variable_path)
+        elif args.feature == features[2]:
+            gen_p4_mod_packet('node97', args.path, variable, variable_path)
+            gen_p4_mod_packet('node98', args.path, variable, variable_path)
+
         compile_p4_program('node97', args.path, variable_path)
 
         if args.pktgen:
-            run_experiment_with_pktgen(args.path, variable_path)
+            if args.feature == features[0]:
+                run_experiment_with_pktgen(args.path, variable_path, 'commands.txt')
+            elif args.feature == features[1]:
+                run_experiment_with_pktgen(args.path, variable_path, 'write_fields.txt')
+            elif args.feature == features[2]:
+                run_experiment_with_pktgen(args.path, variable_path, 'write_fields.txt')
         else:
             run_experiment_with_MoonGen(args.path, args.moongen, variable_path)
         variable += 2

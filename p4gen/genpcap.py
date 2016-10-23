@@ -100,10 +100,10 @@ def get_packetmod_pcap(nb_headers, nb_fields, mod_type, out_dir, packet_size=128
     elif mod_type == 'rm':
         pkt = add_eth_ip_udp_headers(0x9091)
         pkt /= add_layers(nb_fields, nb_headers)
+        pkt = add_padding(pkt, packet_size)
     elif mod_type == 'mod':
         pkt = add_eth_ip_udp_headers(0x9091)
         pkt /= add_layers(nb_fields, nb_headers)
+        pkt = add_padding(pkt, packet_size)
 
-    pkt = add_padding(pkt, packet_size)
     wrpcap('%s/test.pcap' % out_dir, pkt)
-

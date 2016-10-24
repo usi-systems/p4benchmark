@@ -8,7 +8,7 @@ import random
 import argparse
 
 import threading
-from scapy.all import sniff, wrpcap
+from scapy.all import sniff, wrpcap, rdpcap
 from scapy.all import Ether, IP, IPv6, TCP, UDP
 from scapy.all import Packet, ShortField, XBitField, bind_layers
 
@@ -119,36 +119,8 @@ if __name__=='__main__':
                         action="store_true", default=False)
     args = parser.parse_args()
 
-    pkt = Ether(dst='00:00:00:00:00:02')/IP(dst='10.0.0.2', ttl=64)/UDP(sport=65231, dport=P4BENCH_PORT)
-
-    if features[args.feature] == 'PARSER':
-        class P4Bench(Packet):
-            name = "P4Bench Message"
-            fields_desc =  []
-            for i in range(args.nb_fields):
-                fields_desc.append(ShortField('field_%d' %i , 0))
-
-        bind_layers(UDP, P4Bench, dport=P4BENCH_PORT)
-        bind_layers(P4Bench, P4Bench, field_0=1)
-
-        pkt_ext = ''
-        for i in range(args.nb_headers):
-            if i < (args.nb_headers - 1):
-                pkt_ext = pkt_ext/P4Bench(field_0=1)
-            else:
-                pkt_ext = pkt_ext/P4Bench(field_0=0)
-        pkt = pkt / pkt_ext
-
-    elif features[args.feature] == 'STATE':
-        bind_layers(UDP, MemTest, dport=P4BENCH_PORT)
-        m = MemTest(op=args.register_op, index=args.register_index,
-                data=args.register_value)
-        pkt = pkt / m
-    elif features[args.feature] == 'PACKET_ADD':
-        pkt["UDP"].dport = random.randint(1024, 65535)
-
-
-    wrpcap('test.pcap', pkt)
+    pkts = rdpcap('test.pcap')
+    pkt = pkts[0]
 
     port_map = {
         0: "veth0",
@@ -181,8 +153,6 @@ if __name__=='__main__':
     ports = []
     print "Sending", args.nb_packets, "packets ..."
     for d in delays:
-        if args.random_dport:
-            pkt["UDP"].dport = random.randint(1024, 65535)
         # pkt.show()
         send_socket.send(str(pkt))
         time.sleep(d / 1000.)

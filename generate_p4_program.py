@@ -35,7 +35,7 @@ def main():
                             help='the bit width of a register element')
     parser.add_argument('--nb-operations', default=1, type=int,
                             help='the number of state access operations')
-    parser.add_argument('--write-op', default=False,
+    parser.add_argument('--operations-op', choices=['w', 'r'], default='w',
                             help='operation is Write op')
     parser.add_argument('--mod-type', default='add', type=str,
                             help='modification type [add, rm, mod]')
@@ -51,7 +51,7 @@ def main():
     elif args.mod_packet:
         benchmark_modification(args.headers, args.fields, args.mod_type)
     elif args.memory:
-        benchmark_memory(args.registers, args.element_width, args.nb_element, args.nb_operations, args.operation_op)
+        benchmark_memory(args.registers, args.element_width, args.nb_element, args.nb_operations, args.operation_op == 'w')
     elif args.action_complexity:
         if args.fields < args.nb_operations:
             args.fields = args.nb_operations

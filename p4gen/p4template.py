@@ -450,3 +450,34 @@ def udp(other_states=''):
 
     """
     return (add_udp_header() + add_udp_parser(other_states))
+
+def add_pisces_forwarding_rule():
+    """
+    This method returns the forwarding rules for PISCES
+
+    :returns:  str -- the code in plain text
+    :raises: None
+
+    """
+    return read_template('template/commands/pisces_forward.txt')
+
+def add_openflow_rule(tbl_id, priority, actions):
+    """
+    This method returns the command for installing a rule to a table
+
+    :param tbl_id: the id of the table
+    :type tbl_id: int
+    :param priority: the priority of the rule
+    :type priority: int
+    :param actions: the actions that will be invoked if matched
+    :type actions: str
+    :returns:  str -- the code in plain text
+    :raises: None
+
+    """
+    binding = {
+        'tbl_id': tbl_id,
+        'priority': priority,
+        'actions' : actions,
+    }
+    return read_template('template/commands/pisces_commands.txt', binding)

@@ -6,6 +6,18 @@ from p4gen.genpcap import get_packetmod_pcap
 from p4gen import copy_scripts
 from p4gen.p4template import *
 
+def generate_pisces_command(nb_headers, out_dir):
+    rules = add_pisces_forwarding_rule()
+    actions = ''
+    for i in range(nb_headers-1):
+        actions += 'set_field:1->header_{0}_field_0,'.format(i)
+    actions += 'set_field:0x9091->udp_dstPort,deparse,output:NXM_NX_REG0[]'
+    rules += add_openflow_rule(1, 12345, actions)
+
+    with open ('%s/pisces_rules.txt' % out_dir, 'w') as out:
+        out.write(rules)
+
+
 def benchmark_add_header_overhead(action_name, nb_header):
     instruction_set =''
     for i in range(nb_header):
@@ -84,5 +96,6 @@ def benchmark_modification(nb_headers, nb_fields, mod_type):
         out.write(commands)
     copy_scripts(out_dir)
     get_packetmod_pcap(nb_headers, nb_fields, mod_type, out_dir)
+    generate_pisces_command(nb_headers, out_dir)
 
     return True

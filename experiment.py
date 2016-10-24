@@ -7,8 +7,8 @@ from threading import Timer
 import time
 
 
-def gen_p4_program(host, path, fields, output_dir):
-    cmd = "ssh {0} 'mkdir -p temp; cd temp; python {1}/generate_p4_program.py --action-complexity --fields {2}'".format(host, path, fields)
+def gen_set_field(host, path, fields, output_dir):
+    cmd = "ssh {0} 'mkdir -p temp; cd temp; python {1}/generate_p4_program.py --action-complexity --fields {2} --nb-operation {2}'".format(host, path, fields)
     print cmd
     ssh = subprocess.Popen(shlex.split(cmd))
     ssh.wait()
@@ -167,8 +167,8 @@ if __name__ == '__main__':
            os.makedirs(variable_path)
 
         if args.feature == features[0]:
-            gen_p4_program('node97', args.path, variable, variable_path)
-            gen_p4_program('node98', args.path, variable, variable_path)
+            gen_set_field('node97', args.path, variable, variable_path)
+            gen_set_field('node98', args.path, variable, variable_path)
         elif args.feature == features[1]:
             gen_p4_parser('node97', args.path, variable, variable_path)
             gen_p4_parser('node98', args.path, variable, variable_path)
@@ -182,9 +182,9 @@ if __name__ == '__main__':
             if args.feature == features[0]:
                 run_experiment_with_pktgen(args.path, variable_path, 'commands.txt')
             elif args.feature == features[1]:
-                run_experiment_with_pktgen(args.path, variable_path, 'write_fields.txt')
+                run_experiment_with_pktgen(args.path, variable_path, 'temp/pisces_rules.txt')
             elif args.feature == features[2]:
-                run_experiment_with_pktgen(args.path, variable_path, 'write_fields.txt')
+                run_experiment_with_pktgen(args.path, variable_path, 'temp/pisces_rules.txt')
         else:
             run_experiment_with_MoonGen(args.path, args.moongen, variable_path)
         variable += 2

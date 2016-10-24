@@ -12,6 +12,16 @@ def benchmark_modify_header_overhead(action_name, nb_operation):
         instruction_set += '\tmodify_field(header_0.field_{0}, 1);\n'.format(i)
     return add_compound_action(action_name, '', instruction_set)
 
+def generate_pisces_command(nb_operation, out_dir):
+    rules = add_pisces_forwarding_rule()
+    actions = ''
+    for i in range(nb_operation):
+        actions += 'set_field:1->header_0_field_{0},'.format(i)
+    actions += 'deparse,output:NXM_NX_REG0[]'
+    rules += add_openflow_rule(1, 12345, actions)
+
+    with open ('%s/pisces_rules.txt' % out_dir, 'w') as out:
+        out.write(rules)
 
 def benchmark_field_write(nb_operations, nb_fields):
     """
@@ -53,5 +63,6 @@ def benchmark_field_write(nb_operations, nb_fields):
         out.write(commands)
     copy_scripts(out_dir)
     get_packetmod_pcap(nb_headers, nb_fields, 'mod', out_dir)
+    generate_pisces_command(nb_operations, out_dir)
 
     return True

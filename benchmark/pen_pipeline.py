@@ -21,52 +21,6 @@ class BenchmarkPipelineDepth(P4Benchmark):
         if not os.path.exists(self.directory):
             os.makedirs(self.directory)
 
-    def tearDown(self):
-        cmd = 'sudo pkill lt-simple_swi'
-        args = shlex.split(cmd)
-        p = Popen(args)
-        out, err = p.communicate()
-        if out:
-            print out
-        if err:
-            print err
-        self.p.wait()
-        assert (self.p.poll() != None)
-        time.sleep(5)
-
-    def add_rules(self, json_path, commands, retries):
-        if retries > 0:
-            cmd = [self.cli_path, '--json', json_path]
-            if os.path.isfile(commands):
-                with open(commands, "r") as f:
-                    p = Popen(cmd, stdin=f, stdout=PIPE, stderr=PIPE)
-                    out, err = p.communicate()
-                    if out:
-                        print out
-                        if "Could not" in out:
-                            print "Retry in 1 second"
-                            time.sleep(1)
-                            return self.add_rules(json_path, port_number, commands, retries-1)
-                        elif  "DUPLICATE_ENTRY" in out:
-                            pass
-                    if err:
-                        print err
-                        time.sleep(1)
-                        return self.add_rules(json_path, port_number, commands, retries-1)
-
-    def run_packet_generator(self):
-        cmd = 'sudo {0} -p {1} -i veth4 -c {2} -t {3}'.format(self.pktgen,
-            'output/test.pcap', self.nb_packets, self.offer_load)
-        print cmd
-        args = shlex.split(cmd)
-        out_file = '{0}/latency.csv'.format(self.directory)
-        err_file = '{0}/loss.csv'.format(self.directory)
-        out = open(out_file, 'w+')
-        err = open(err_file, 'w+')
-        p = Popen(args, stdout=out, stderr=err)
-        p.wait()
-        out.close()
-        err.close()
 
     def compile_p4_program(self):
         ret = benchmark_pipeline(self.nb_tables, self.tbl_size)
@@ -79,35 +33,6 @@ class BenchmarkPipelineDepth(P4Benchmark):
                 stdout=out, stderr=out)
             p.wait()
             assert (p.returncode == 0)
-
-    def run_behavioral_switch(self):
-        prog = 'main'
-        json_path = 'output/%s.json' % prog
-        commands = 'output/commands.txt'
-        cmd = 'sudo {0} {1} -i0@veth0 -i1@veth2 -i 2@veth4 {2}'.format(self.switch_path,
-                json_path, self.log_level)
-        print cmd
-        args = shlex.split(cmd)
-        out_file = '{0}/bmv2.log'.format(self.directory)
-        with open(out_file, 'w') as out:
-            out.write('Number of packets: %d\n' % self.nb_packets)
-            out.write('offered load:  %d\n' % self.offer_load)
-            self.p = Popen(args, stdout=out, stderr=out, shell=False)
-        assert (self.p.poll() == None)
-        # wait for the switch to start
-        time.sleep(2)
-        # insert rules: retry 3 times if not succeed
-        self.add_rules(json_path, commands, 3)
-
-    def has_lost_packet(self):
-        with open('%s/loss.csv' % self.directory, 'r') as f:
-            for line in f:
-                pass
-            data = shlex.split(line)
-            assert (len(data) == 3)
-            sent = float(data[0])
-            recv = float(data[1])
-        return (recv < sent)
 
 
 def main():

@@ -21,27 +21,6 @@ class BenchmarkMemory(P4Benchmark):
         if not os.path.exists(self.directory):
             os.makedirs(self.directory)
 
-    def start(self):
-        # run switch
-        self.run_behavioral_switch()
-        # run packet generator
-        self.run_packet_generator()
-        # stop the switch
-        self.tearDown()
-
-    def run_packet_generator(self):
-        cmd = 'sudo {0} -p {1} -i veth4 -c {2} -t {3}'.format(self.pktgen,
-            'output/test.pcap', self.nb_packets, self.offer_load)
-        print cmd
-        args = shlex.split(cmd)
-        out_file = '{0}/latency.csv'.format(self.directory)
-        err_file = '{0}/loss.csv'.format(self.directory)
-        out = open(out_file, 'w+')
-        err = open(err_file, 'w+')
-        p = Popen(args, stdout=out, stderr=err)
-        p.wait()
-        out.close()
-        err.close()
 
     def compile_p4_program(self):
         ret = benchmark_memory(self.nb_registers, self.element_size, self.nb_elements, 1)
@@ -54,25 +33,6 @@ class BenchmarkMemory(P4Benchmark):
                 stdout=out, stderr=out)
             p.wait()
             assert (p.returncode == 0)
-
-    def run_behavioral_switch(self):
-        prog = 'main'
-        json_path = 'output/%s.json' % prog
-        commands = 'output/commands.txt'
-        cmd = 'sudo {0} {1} -i0@veth0 -i1@veth2 -i 2@veth4 {2}'.format(self.switch_path,
-                json_path, self.log_level)
-        print cmd
-        args = shlex.split(cmd)
-        out_file = '{0}/bmv2.log'.format(self.directory)
-        with open(out_file, 'w') as out:
-            out.write('Number of packets: %d\n' % self.nb_packets)
-            out.write('offered load:  %d\n' % self.offer_load)
-            self.p = Popen(args, stdout=out, stderr=out, shell=False)
-        assert (self.p.poll() == None)
-        # wait for the switch to start
-        time.sleep(2)
-        # insert rules: retry 3 times if not succeed
-        self.add_rules(json_path, commands, 3)
 
 
 def main():

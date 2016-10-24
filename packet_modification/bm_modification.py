@@ -10,6 +10,9 @@ def benchmark_add_header_overhead(action_name, nb_header):
     instruction_set =''
     for i in range(nb_header):
         instruction_set += '\tadd_header(header_%d);\n' % i
+        # TODO: uncomment if headers are not added in deparser
+        # if i < nb_header - 1:
+        #     instruction_set += '\tmodify_field(header_%d.field_0, 1);\n' % i
 
     # Change udp port to include generic headers in deparser
     # TODO: parameterize the protocol number for the generic header

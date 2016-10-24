@@ -6,15 +6,14 @@ import os, sys
 from threading import Timer
 import time
 
-
-def gen_set_field(host, path, fields, output_dir):
-    cmd = "ssh {0} 'mkdir -p temp; cd temp; python {1}/generate_p4_program.py --action-complexity --fields {2} --nb-operation {2}'".format(host, path, fields)
+def gen_p4_parser(host, path, headers, output_dir):
+    cmd = "ssh {0} 'mkdir -p temp; cd temp; python {1}/generate_p4_program.py --parser-header --headers {2}'".format(host, path, headers)
     print cmd
     ssh = subprocess.Popen(shlex.split(cmd))
     ssh.wait()
 
-def gen_p4_parser(host, path, headers, output_dir):
-    cmd = "ssh {0} 'mkdir -p temp; cd temp; python {1}/generate_p4_program.py --parser-header --headers {2}'".format(host, path, headers)
+def gen_set_field(host, path, fields, output_dir):
+    cmd = "ssh {0} 'mkdir -p temp; cd temp; python {1}/generate_p4_program.py --action-complexity --fields {2} --nb-operation {2}'".format(host, path, fields)
     print cmd
     ssh = subprocess.Popen(shlex.split(cmd))
     ssh.wait()
@@ -40,7 +39,7 @@ def dump_flows(host):
 
 
 def run_pisces(host, path, output_dir, rule_file):
-    cmd = "ssh {0} 'cd temp; python {1}/pisces/P4vSwitch.py -r {1}/pisces/{2}'".format(host, path, rule_file)
+    cmd = "ssh {0} 'cd temp; python {1}/pisces/P4vSwitch.py -r {2}'".format(host, path, rule_file)
     print cmd
     with open('%s/switch.txt' % (output_dir), 'w') as out:
         ssh = subprocess.Popen(shlex.split(cmd),
@@ -69,8 +68,8 @@ def copy_histogram(host, moongen_path, output_dir):
 
 def run_my_pktgen(host, path, output_dir, mbps=1000):
     Bps = mbps * (10**6) / 8
-    # cmd = "ssh -t {0} 'sudo {1}/pktgen/build/p4benchmark -p temp/output/test.pcap -s eth3 -i eth4 -f \"udp and dst port 37009\" -c 10000000 -t {2} 2> /tmp/pktgen'".format(host, path, Bps)
-    cmd = "ssh -t {0} 'sudo {1}/pktgen/build/p4benchmark -p temp/output/test.pcap -s eth3 -i eth4 -f \"udp\" -c 10000000 -t {2} 2> /tmp/pktgen'".format(host, path, Bps)
+    cmd = "ssh -t {0} 'sudo {1}/pktgen/build/p4benchmark -p temp/output/test.pcap -s eth3 -i eth4 -f \"udp and dst port 37009\" -c 10000000 -t {2} 2> /tmp/pktgen'".format(host, path, Bps)
+    # cmd = "ssh -t {0} 'sudo {1}/pktgen/build/p4benchmark -p temp/output/test.pcap -s eth3 -i eth4 -f \"udp\" -c 10000000 -t {2} 2> /tmp/pktgen'".format(host, path, Bps)
     print cmd
     with open('%s/latency.csv' % (output_dir), 'w') as out:
         ssh = subprocess.Popen(shlex.split(cmd),
@@ -94,14 +93,14 @@ def stop_pisces(host, path):
     ssh.wait()
 
 
-def run_experiment_with_MoonGen(path, moongen_path, variable_path):
+def run_experiment_with_MoonGen(path, moongen_path, variable_path, rule_file):
     load = 1000
     while load <= 10000:
         output_path = '{0}/{1}'.format(variable_path, load)
         if not os.path.exists(output_path):
             os.makedirs(output_path)
 
-        switch = run_pisces('node97', path, output_path)
+        switch = run_pisces('node97', path, output_path, rule_file)
         # wait for switch to come up
         time.sleep(5)
         moongen = run_moongen('node98', path, moongen_path, output_path, load)
@@ -144,9 +143,9 @@ if __name__ == '__main__':
                 help='the number of actions for benchmarking parse-field')
     parser.add_argument('--path', default='/home/danghu/workspace/p4benchmark',
                 help='path to p4benchmark on the remote server')
-    parser.add_argument('--moongen', default='/home/danghu/MoonGen',
+    parser.add_argument('--moongen-path', default='/home/danghu/MoonGen',
                 help='path to MoonGen on the remote server')
-    parser.add_argument('--pktgen', default=True, action='store_true',
+    parser.add_argument('--moongen', default=False, action='store_true',
                 help='use p4benchmark packet generator')
     args = parser.parse_args()
 
@@ -161,30 +160,30 @@ if __name__ == '__main__':
         args.print_usages()
         sys.exit(-1)
 
-    while variable <= 20:
+    # for variable in [1, 2, 4, 8, 16, 32]:
+    for variable in [1,]:
         variable_path = '{0}/{1}'.format(args.output, variable)
         if not os.path.exists(variable_path):
            os.makedirs(variable_path)
 
         if args.feature == features[0]:
-            gen_set_field('node97', args.path, variable, variable_path)
-            gen_set_field('node98', args.path, variable, variable_path)
-        elif args.feature == features[1]:
             gen_p4_parser('node97', args.path, variable, variable_path)
             gen_p4_parser('node98', args.path, variable, variable_path)
+        elif args.feature == features[1]:
+            gen_set_field('node97', args.path, variable, variable_path)
+            gen_set_field('node98', args.path, variable, variable_path)
         elif args.feature == features[2]:
             gen_p4_mod_packet('node97', args.path, variable, variable_path)
             gen_p4_mod_packet('node98', args.path, variable, variable_path)
 
         compile_p4_program('node97', args.path, variable_path)
 
-        if args.pktgen:
-            if args.feature == features[0]:
-                run_experiment_with_pktgen(args.path, variable_path, 'commands.txt')
-            elif args.feature == features[1]:
-                run_experiment_with_pktgen(args.path, variable_path, 'temp/pisces_rules.txt')
-            elif args.feature == features[2]:
-                run_experiment_with_pktgen(args.path, variable_path, 'temp/pisces_rules.txt')
+        if args.moongen:
+            run_experiment_with_MoonGen(args.path, args.moongen_path, variable_path, '~/temp/output/pisces_rules.txt')
         else:
-            run_experiment_with_MoonGen(args.path, args.moongen, variable_path)
-        variable += 2
+            if args.feature == features[0]:
+                run_experiment_with_pktgen(args.path, variable_path, args.path + 'pisces/commands.txt')
+            elif args.feature == features[1]:
+                run_experiment_with_pktgen(args.path, variable_path, '~/temp/output/pisces_rules.txt')
+            elif args.feature == features[2]:
+                run_experiment_with_pktgen(args.path, variable_path, '~/temp/output/pisces_rules.txt')

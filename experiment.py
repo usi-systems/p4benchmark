@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+    #!/usr/bin/env python
 import argparse
 import subprocess
 import shlex
@@ -49,6 +49,17 @@ def run_pisces(host, path, output_dir, rule_file):
     return ssh
 
 
+def has_lost_packet(path):
+    with open('%s/loss.csv' % path, 'r') as f:
+        for line in f:
+            pass
+        data = shlex.split(line)
+        assert (len(data) == 3)
+        sent = float(data[0])
+        recv = float(data[1])
+    return (recv < sent)
+
+
 def run_moongen(host, path, moongen_path, output_dir, load=1000):
     cmd = "ssh -t {0} 'sudo {1}/build/MoonGen {2}/pktgen/lua_config/pcap_ts_timer.lua 0 1 temp/output/test.pcap -l {3}'".format(host, moongen_path, path, load)
     print cmd
@@ -65,6 +76,16 @@ def copy_histogram(host, moongen_path, output_dir):
     ssh = subprocess.Popen(shlex.split(cmd), shell=False)
     ssh.wait()
 
+
+def bind_ixgbe(host, path):
+    cmd = "ssh -t {0} 'sudo dpdk'".format(host, moongen_path, path, load)
+    print cmd
+    with open('%s/MoonGen.txt' % (output_dir), 'w') as out:
+        ssh = subprocess.Popen(shlex.split(cmd),
+                                stdout=out,
+                                stderr=out,
+                                shell=False)
+    return ssh
 
 def run_my_pktgen(host, path, output_dir, mbps=1000):
     Bps = mbps * (10**6) / 8
@@ -114,19 +135,24 @@ def run_experiment_with_MoonGen(path, moongen_path, variable_path, rule_file):
         time.sleep(5)
         load += 1000
 
+
 def run_experiment_with_pktgen(path, variable_path, rule_file):
     load = 500
-    output_path = '{0}/{1}'.format(variable_path, load)
-    if not os.path.exists(output_path):
-        os.makedirs(output_path)
+    packet_lost = False
+    while not packet_lost:
+        output_path = '{0}/{1}'.format(variable_path, load)
+        if not os.path.exists(output_path):
+            os.makedirs(output_path)
 
-    switch = run_pisces('node97', path, output_path, rule_file)
-    # wait for switch to come up
-    time.sleep(5)
-    run_my_pktgen('node98', path, output_path, load)
-    dump_flows('node97')
-    stop_pisces('node97', path)
-    switch.wait()
+        switch = run_pisces('node97', path, output_path, rule_file)
+        # wait for switch to come up
+        time.sleep(5)
+        run_my_pktgen('node98', path, output_path, load)
+        dump_flows('node97')
+        stop_pisces('node97', path)
+        switch.wait()
+        packet_lost = has_lost_packet(output_path)
+        load += 100
 
 features = ['parse-field', 'set-field', 'modify']
 
@@ -160,8 +186,7 @@ if __name__ == '__main__':
         args.print_usages()
         sys.exit(-1)
 
-    # for variable in [1, 2, 4, 8, 16, 32]:
-    for variable in [1,]:
+    for variable in [1, 2, 4, 8, 16]:
         variable_path = '{0}/{1}'.format(args.output, variable)
         if not os.path.exists(variable_path):
            os.makedirs(variable_path)

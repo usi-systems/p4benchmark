@@ -8,9 +8,9 @@ local memory	= require "memory"
 local stats		= require "stats"
 local pcap		= require "pcap"
 
-local NUM_PKTS = 10^7
+local NUM_PKTS = 10^6
 
-local PKT_SIZE = 60
+local PKT_SIZE = 128
 
 function configure(parser)
 	parser:argument("txPort", "Device use for tx."):args(1):convert(tonumber)
@@ -58,11 +58,17 @@ function loadSlave(queue, showStats, file)
 end
 
 function runTest(txQueue, rxQueue)
+	local txCtr = stats:newDevTxCounter(txQueue, "plain")
+	local rxCtr = stats:newDevRxCounter(rxQueue, "plain")
 	local timestamper = ts:newTimestamper(txQueue, rxQueue)
 	local hist = hist:new()
 	while mg.running() do
 		hist:update(timestamper:measureLatency())
+		txCtr:update()
+		rxCtr:update()
 	end
 	hist:save("histogram.csv")
 	hist:print()
+	txCtr:finalize()
+	rxCtr:finalize()
 end

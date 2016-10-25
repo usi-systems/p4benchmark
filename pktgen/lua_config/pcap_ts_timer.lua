@@ -9,7 +9,7 @@ local stats		= require "stats"
 local pcap		= require "pcap"
 local timer  	= require "timer"
 
-RUN_TIME = 60
+RUN_TIME = 10
 
 local PKT_SIZE = 138
 
@@ -32,7 +32,7 @@ function master(args)
 		-- TODO: use packet size in pcap file
 		load = args.load * PKT_SIZE / (PKT_SIZE + 24)
 		txDev:getTxQueue(0):setRate(load)
-		mg.startTask("loadSlave", txDev:getTxQueue(0), true, args.file)
+		mg.startTask("loadSlave", txDev:getTxQueue(0), false, args.file)
 		mg.sleepMillis(500)
 	end
 	runTest(txDev:getTxQueue(1), rxDev:getRxQueue(1))
@@ -58,11 +58,17 @@ function loadSlave(queue, showStats, file)
 end
 
 function runTest(txQueue, rxQueue)
+	local txCtr = stats:newDevTxCounter(txQueue, "plain")
+	local rxCtr = stats:newDevRxCounter(rxQueue, "plain")
 	local timestamper = ts:newTimestamper(txQueue, rxQueue)
 	local hist = hist:new()
 	while mg.running() do
 		hist:update(timestamper:measureLatency())
+		txCtr:update()
+		rxCtr:update()
 	end
 	hist:save("histogram.csv")
 	hist:print()
+	txCtr:finalize()
+	rxCtr:finalize()
 end

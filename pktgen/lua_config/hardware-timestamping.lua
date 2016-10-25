@@ -11,27 +11,28 @@ local log    = require "log"
 local RUN_TIME = 5
 
 function configure(parser)
-	parser:description("Demonstrate and test hardware timestamping capabilities.\nThe ideal test setup for this is a cable directly connecting the two test ports.")
-	parser:argument("dev", "Devices to use."):args(2):convert(tonumber)
-	return parser:parse()
+	parser:description("Demonstrate and test hardware timestamping capabilities.\n")
+	parser:argument("txPort", "Device use for tx."):args(1):convert(tonumber)
+	parser:argument("rxPort", "Device use for rx."):args(1):convert(tonumber)
+	parser:argument("file", "File to replay."):args(1)
+	parser:option("-l --load", "replay as fast as possible"):default(1000):convert(tonumber):target("load")
+	local args = parser:parse()
+	return args
 end
 
 function master(args)
-	args.dev[1] = device.config{port = args.dev[1], txQueues = 2}
-	args.dev[2] = device.config{port = args.dev[2], rxQueues = 2}
+	local txDev = device.config{port = args.txPort, txQueues = 2}
+	local rxDev = device.config{port = args.rxPort, rxQueues = 2}
 	device.waitForLinks()
-	local txQueue0 = args.dev[1]:getTxQueue(0)
-	local txQueue1 = args.dev[1]:getTxQueue(1)
-	local rxQueue0 = args.dev[2]:getRxQueue(0)
-	local rxQueue1 = args.dev[2]:getRxQueue(1)
+	local txQueue0 = txDev:getTxQueue(0)
+	local txQueue1 = txDev:getTxQueue(1)
+	local rxQueue0 = rxDev:getRxQueue(0)
+	local rxQueue1 = rxDev:getRxQueue(1)
 	lm.startTask("timestamper", txQueue0, rxQueue0):wait()
 	lm.startTask("timestamper", txQueue0, rxQueue1):wait()
-	lm.startTask("timestamper", txQueue0, rxQueue0, nil, nil, true):wait()
 	lm.startTask("timestamper", txQueue0, rxQueue0, 319):wait()
 	lm.startTask("timestamper", txQueue0, rxQueue0, 1234):wait()
-	lm.startTask("timestamper", txQueue0, rxQueue0, 319, nil, true):wait()
 	lm.startTask("timestamper", txQueue0, rxQueue1, 319):wait()
-	lm.startTask("timestamper", txQueue0, rxQueue1, 319, true):wait()
 	lm.startTask("timestamper", txQueue0, rxQueue1, 319)
 	lm.startTask("flooder", txQueue1, 319)
 	lm.waitForTasks()
@@ -99,3 +100,4 @@ function flooder(queue, port)
 		queue:send(bufs)
 	end
 end
+

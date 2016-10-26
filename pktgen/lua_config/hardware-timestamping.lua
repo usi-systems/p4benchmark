@@ -8,13 +8,13 @@ local hist   = require "histogram"
 local timer  = require "timer"
 local log    = require "log"
 
-local RUN_TIME = 5
+local RUN_TIME = 30
 
 function configure(parser)
 	parser:description("Demonstrate and test hardware timestamping capabilities.\n")
 	parser:argument("txPort", "Device use for tx."):args(1):convert(tonumber)
 	parser:argument("rxPort", "Device use for rx."):args(1):convert(tonumber)
-	parser:argument("file", "File to replay."):args(1)
+	-- parser:argument("file", "File to replay."):args(1)
 	parser:option("-l --load", "replay as fast as possible"):default(1000):convert(tonumber):target("load")
 	local args = parser:parse()
 	return args
@@ -28,13 +28,13 @@ function master(args)
 	local txQueue1 = txDev:getTxQueue(1)
 	local rxQueue0 = rxDev:getRxQueue(0)
 	local rxQueue1 = rxDev:getRxQueue(1)
-	lm.startTask("timestamper", txQueue0, rxQueue0):wait()
-	lm.startTask("timestamper", txQueue0, rxQueue1):wait()
+	-- lm.startTask("timestamper", txQueue0, rxQueue0):wait()
+	-- lm.startTask("timestamper", txQueue0, rxQueue1):wait()
 	lm.startTask("timestamper", txQueue0, rxQueue0, 319):wait()
-	lm.startTask("timestamper", txQueue0, rxQueue0, 1234):wait()
-	lm.startTask("timestamper", txQueue0, rxQueue1, 319):wait()
-	lm.startTask("timestamper", txQueue0, rxQueue1, 319)
-	lm.startTask("flooder", txQueue1, 319)
+	-- lm.startTask("timestamper", txQueue0, rxQueue0, 1234):wait()
+	-- lm.startTask("timestamper", txQueue0, rxQueue1, 319):wait()
+	-- lm.startTask("timestamper", txQueue0, rxQueue1, 319)
+	-- lm.startTask("flooder", txQueue1, 319)
 	lm.waitForTasks()
 end
 
@@ -66,8 +66,13 @@ function timestamper(txQueue, rxQueue, udp, randomSrc, vlan)
 				if randomSrc then
 					buf:getUdpPacket().udp:setSrcPort(math.random(1, 1000))
 				end
-				buf:getUdpPacket().udp:setDstPort(udp)
-			end
+                local pkt = buf:getUdpPacket()
+                pkt:fill {
+                        DstPort = udp,
+                        ethSrc = txQueue,
+                        ethDst = rxQueue
+                }
+            end
 			if vlan then
 				buf:setVlan(1234)
 			end

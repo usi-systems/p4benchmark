@@ -7,6 +7,7 @@ local ts     = require "timestamping"
 local hist   = require "histogram"
 local timer  = require "timer"
 local log    = require "log"
+local stats	 = require "stats"
 
 local RUN_TIME = 30
 
@@ -54,6 +55,8 @@ function timestamper(txQueue, rxQueue, udp, randomSrc, vlan)
 	end
 	local runtime = timer:new(RUN_TIME)
 	local hist = hist:new()
+	local txCtr = stats:newDevTxCounter(txQueue, "plain")
+	local rxCtr = stats:newDevRxCounter(rxQueue, "plain")
 	local timestamper
 	if udp then
 		timestamper = ts:newUdpTimestamper(txQueue, rxQueue)
@@ -78,12 +81,17 @@ function timestamper(txQueue, rxQueue, udp, randomSrc, vlan)
 			end
 		end)
 		hist:update(lat)
+		txCtr:update()
+		rxCtr:update()
 	end
 	hist:print()
 	if hist.numSamples == 0 then
 		log:error("Received no packets.")
 	end
 	print()
+	hist:save("histogram.csv")
+	txCtr:finalize()
+	rxCtr:finalize()
 end
 
 function flooder(queue, port)

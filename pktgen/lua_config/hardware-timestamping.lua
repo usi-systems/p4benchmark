@@ -29,6 +29,10 @@ function master(args)
 	local txQueue1 = txDev:getTxQueue(1)
 	local rxQueue0 = rxDev:getRxQueue(0)
 	local rxQueue1 = rxDev:getRxQueue(1)
+
+	txQueue0:setRate(args.load)
+	txQueue1:setRate(args.load)
+
 	-- lm.startTask("timestamper", txQueue0, rxQueue0):wait()
 	-- lm.startTask("timestamper", txQueue0, rxQueue1):wait()
 	lm.startTask("timestamper", txQueue0, rxQueue0, 319):wait()

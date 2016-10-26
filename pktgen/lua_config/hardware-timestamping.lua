@@ -1,6 +1,6 @@
 --- Demonstrates and tests hardware timestamping capabilities
 
-local lm     = require "libmoon"
+local mg     = require "moongen"
 local device = require "device"
 local memory = require "memory"
 local ts     = require "timestamping"
@@ -8,6 +8,7 @@ local hist   = require "histogram"
 local timer  = require "timer"
 local log    = require "log"
 local stats	 = require "stats"
+local pcap	 = require "pcap"
 
 local RUN_TIME = 30
 
@@ -15,7 +16,7 @@ function configure(parser)
 	parser:description("Demonstrate and test hardware timestamping capabilities.\n")
 	parser:argument("txPort", "Device use for tx."):args(1):convert(tonumber)
 	parser:argument("rxPort", "Device use for rx."):args(1):convert(tonumber)
-	-- parser:argument("file", "File to replay."):args(1)
+	parser:argument("file", "File to replay."):args(1)
 	parser:option("-l --load", "replay as fast as possible"):default(1000):convert(tonumber):target("load")
 	local args = parser:parse()
 	return args
@@ -26,21 +27,23 @@ function master(args)
 	local rxDev = device.config{port = args.rxPort, rxQueues = 2}
 	device.waitForLinks()
 	local txQueue0 = txDev:getTxQueue(0)
-	local txQueue1 = txDev:getTxQueue(1)
-	local rxQueue0 = rxDev:getRxQueue(0)
+	local txQueue1 = txDev:getTxQueue(0)
+	local rxQueue0 = rxDev:getRxQueue(1)
 	local rxQueue1 = rxDev:getRxQueue(1)
 
 	txQueue0:setRate(args.load)
-	txQueue1:setRate(args.load)
 
-	-- lm.startTask("timestamper", txQueue0, rxQueue0):wait()
-	-- lm.startTask("timestamper", txQueue0, rxQueue1):wait()
-	lm.startTask("timestamper", txQueue0, rxQueue0, 319):wait()
-	-- lm.startTask("timestamper", txQueue0, rxQueue0, 1234):wait()
-	-- lm.startTask("timestamper", txQueue0, rxQueue1, 319):wait()
-	-- lm.startTask("timestamper", txQueue0, rxQueue1, 319)
-	-- lm.startTask("flooder", txQueue1, 319)
-	lm.waitForTasks()
+	mg.startTask("loadSlave", txQueue0, rxDev, args.file)
+	mg.startTask("timestamper", txQueue1, rxQueue1, 319)
+
+	-- mg.startTask("timestamper", txQueue0, rxQueue0):wait()
+	-- mg.startTask("timestamper", txQueue0, rxQueue1):wait()
+	-- mg.startTask("timestamper", txQueue0, rxQueue0, 1234):wait()
+	-- mg.startTask("timestamper", txQueue0, rxQueue1, 319):wait()
+	-- mg.startTask("timestamper", txQueue0, rxQueue1, 319)
+	-- mg.startTask("flooder", txQueue1, 319)
+
+	mg.waitForTasks()
 end
 
 
@@ -58,16 +61,15 @@ function timestamper(txQueue, rxQueue, udp, randomSrc, vlan)
 		log:info("Adding VLAN tag, this is not supported on some NICs.")
 	end
 	local runtime = timer:new(RUN_TIME)
-	local hist = hist:new()
-	local txCtr = stats:newDevTxCounter(txQueue, "plain")
-	local rxCtr = stats:newDevRxCounter(rxQueue, "plain")
 	local timestamper
 	if udp then
 		timestamper = ts:newUdpTimestamper(txQueue, rxQueue)
 	else
 		timestamper = ts:newTimestamper(txQueue, rxQueue)
 	end
-	while lm.running() and runtime:running() do
+	local hist = hist:new()
+	mg.sleepMillis(1000) -- ensure that the load task is running
+	while mg.running() and runtime:running() do
 		local lat = timestamper:measureLatency(function(buf)
 			if udp then
 				if randomSrc then
@@ -85,8 +87,6 @@ function timestamper(txQueue, rxQueue, udp, randomSrc, vlan)
 			end
 		end)
 		hist:update(lat)
-		txCtr:update()
-		rxCtr:update()
 	end
 	hist:print()
 	if hist.numSamples == 0 then
@@ -94,27 +94,27 @@ function timestamper(txQueue, rxQueue, udp, randomSrc, vlan)
 	end
 	print()
 	hist:save("histogram.csv")
-	txCtr:finalize()
-	rxCtr:finalize()
 end
 
-function flooder(queue, port)
-	log:info("Flooding link with UDP packets with the same flow 5-tuple.")
-	log:info("This tests whether the filter matches on payload.")
-	local mempool = memory.createMemPool(function(buf)
-		local pkt = buf:getUdpPtpPacket()
-		pkt:fill{
-			ethSrc = queue,
-		}
-		-- the filter should not match this
-		pkt.ptp:setVersion(0xFF)
-		pkt.udp:setDstPort(port)
-	end)
+function loadSlave(queue, rxDev, file)
+	local mempool = memory:createMemPool()
 	local bufs = mempool:bufArray()
-	local runtime = timer:new(RUN_TIME + 0.1)
-	while lm.running() and runtime:running() do
-		bufs:alloc(60)
-		queue:send(bufs)
+	local pcapFile = pcap:newReader(file)
+	local txCtr = stats:newDevTxCounter(queue, "plain")
+	local rxCtr = stats:newDevRxCounter(rxDev, "plain")
+	local runtime = timer:new(RUN_TIME)
+	while runtime:running() and mg.running() do
+		local n = pcapFile:read(bufs)
+		if n == 0 then
+			pcapFile:reset()
+		end
+		queue:sendN(bufs, n)
+		txCtr:update()
+		rxCtr:update()
 	end
+	mg.sleepMillis(1000)
+	txCtr:finalize()
+	rxCtr:finalize()
+	mg.stop()
 end
 

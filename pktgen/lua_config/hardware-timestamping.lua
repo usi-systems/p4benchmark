@@ -34,7 +34,7 @@ function master(args)
 	txQueue0:setRate(args.load)
 
 	mg.startTask("loadSlave", txQueue0, rxDev, args.file)
-	mg.startTask("timestamper", txQueue1, rxQueue1, 319)
+	-- mg.startTask("timestamper", txQueue1, rxQueue1, 319)
 
 	-- mg.startTask("timestamper", txQueue0, rxQueue0):wait()
 	-- mg.startTask("timestamper", txQueue0, rxQueue1):wait()

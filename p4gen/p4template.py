@@ -307,7 +307,7 @@ def add_parser(header_type_name, header_name, parser_state_name, select_field, n
     :raises: None
 
     """
-    binding = {'header_type_name': header_type_name, 'header_name': header_name                      ,
+    binding = {'header_type_name': header_type_name, 'header_name': header_name,
              'parser_state_name': parser_state_name, 'select_field': select_field,
              'next_states': next_states}
     return read_template('template/parsers/parse_generic.txt', binding)
@@ -329,7 +329,7 @@ def add_parser_without_select(header_type_name, header_name, parser_state_name,
     :raises: None
 
     """
-    binding = {'header_type_name': header_type_name, 'header_name': header_name                      ,
+    binding = {'header_type_name': header_type_name, 'header_name': header_name,
              'parser_state_name': parser_state_name, 'next_state': next_state}
     return read_template('template/parsers/parse_no_select.txt', binding)
 

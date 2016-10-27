@@ -18,9 +18,9 @@ class P4Benchmark(object):
         pypath = os.environ.get('PYTHONPATH')
         p4bench = os.environ.get('P4BENCHMARK_ROOT')
         self.ovs = os.environ.get('OVS_PATH')
-	print 'OVS_PATH', self.ovs
+    	print 'OVS_PATH', self.ovs
         self.dpdk = os.environ.get('DPDK_BUILD')
-	print 'DPDK_BUILD', self.dpdk
+    	print 'DPDK_BUILD', self.dpdk
         bmv2 = os.path.join(p4bench, 'behavioral-model')
         self.p4c = os.path.join(p4bench, 'p4c-bm/p4c_bm/__main__.py')
         self.switch_path = os.path.join(bmv2, 'targets/simple_switch/simple_switch')
@@ -35,11 +35,11 @@ class P4Benchmark(object):
 
 class BenchmarkPisces(P4Benchmark):
 
-    def __init__(self, nb_field, offer_load):
+    def __init__(self, nb_operation, offer_load):
         parent_dir = 'result/'
-        directory = '{0}/{1}/{2}'.format(parent_dir, nb_field, offer_load)
+        directory = '{0}/{1}/{2}'.format(parent_dir, nb_operation, offer_load)
         super(BenchmarkPisces, self).__init__(parent_dir, directory, offer_load)
-        self.nb_field = nb_field
+        self.nb_operation = nb_operation
         self.nb_header = 1
         if not os.path.exists(self.directory):
             os.makedirs(self.directory)
@@ -50,7 +50,7 @@ class BenchmarkPisces(P4Benchmark):
         p.wait()
 
     def configure(self):
-        ret = benchmark_field_write(self.nb_header, self.nb_field)
+        ret = benchmark_field_write(self.nb_operation)
         assert (ret == True)
         prog = 'main'
         cmd =   """{0}/configure --with-dpdk={1}
@@ -112,9 +112,9 @@ class BenchmarkPisces(P4Benchmark):
         time.sleep(5)
 
 
-def run(nb_fields=4, step=4):
+def run(nb_operations=4, step=4):
     offer_load = 1000
-    p = BenchmarkPisces(nb_fields, offer_load)
+    p = BenchmarkPisces(nb_operations, offer_load)
     p.clean()
     p.configure()
     p.make_switch()
@@ -130,10 +130,10 @@ def run(nb_fields=4, step=4):
 
 if __name__=='__main__':
     parser = argparse.ArgumentParser(description='P4 Benchmark')
-    parser.add_argument('-n', '--fields', default=4, type=int,
-                        help='number of fields')
+    parser.add_argument('-n', '--nb-operations', default=4, type=int,
+                        help='number of operations')
     parser.add_argument('-s', '--step', default=4, type=int,
-                        help='number of fields to add in iteration')
+                        help='number of operations to add in iteration')
     args = parser.parse_args()
 
-    run(args.fields, args.step)
+    run(args.nb_operations, args.step)

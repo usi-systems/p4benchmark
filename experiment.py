@@ -90,28 +90,29 @@ def stop_pisces(host, path):
     ssh = subprocess.Popen(shlex.split(cmd), shell=False)
     ssh.wait()
 
+def run_N_experiments(path, moongen_path, variable_path, rule_file, N=1):
+    i = 0
+    while i < N:
+        load = 10000
+        while load <= 10000:
+            output_path = '{0}/{1}/{2}'.format(variable_path, i, load)
+            if not os.path.exists(output_path):
+                os.makedirs(output_path)
 
-def run_experiment_with_MoonGen(path, moongen_path, variable_path, rule_file):
-    load = 10000
-    while load <= 10000:
-        output_path = '{0}/{1}'.format(variable_path, load)
-        if not os.path.exists(output_path):
-            os.makedirs(output_path)
+            switch = run_pisces('node97', path, output_path, rule_file)
+            # wait for switch to come up
+            time.sleep(5)
+            moongen = run_moongen('node98', path, moongen_path, output_path, load)
+            moongen.wait()
+            copy_histogram('node98', moongen_path, output_path)
 
-        switch = run_pisces('node97', path, output_path, rule_file)
-        # wait for switch to come up
-        time.sleep(5)
-        moongen = run_moongen('node98', path, moongen_path, output_path, load)
-        moongen.wait()
-        copy_histogram('node98', moongen_path, output_path)
-
-        dump_flows('node97', output_path)
-        dump_ports('node97', output_path)
-        stop_pisces('node97', path)
-        switch.wait()
-        # wait 10s before starting new experiments
-        time.sleep(5)
-        load += 1000
+            dump_flows('node97', output_path)
+            stop_pisces('node97', path)
+            switch.wait()
+            # wait 10s before starting new experiments
+            time.sleep(5)
+            load += 1000
+        i += 1
 
 
 if __name__ == '__main__':
@@ -135,4 +136,4 @@ if __name__ == '__main__':
         gen_p4_program('node98', args.feature, args.path, variable, variable_path)
 
         compile_p4_program('node97', args.path, variable_path)
-        run_experiment_with_MoonGen(args.path, args.moongen_path, variable_path, args.path + '/pisces/commands.txt')
+        run_N_experiments(args.path, args.moongen_path, variable_path,'~/temp/output/pisces_rules.txt', 5)

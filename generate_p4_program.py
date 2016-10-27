@@ -53,9 +53,7 @@ def main():
     elif args.memory:
         benchmark_memory(args.registers, args.element_width, args.nb_element, args.nb_operations, args.operation_op == 'w')
     elif args.action_complexity:
-        if args.fields < args.nb_operations:
-            args.fields = args.nb_operations
-        benchmark_field_write(args.nb_operations, args.fields)
+        benchmark_field_write(args.nb_operations)
 
 if __name__=='__main__':
     main()

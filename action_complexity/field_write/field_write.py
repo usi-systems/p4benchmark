@@ -10,18 +10,16 @@ from benchmark.benchmark import P4Benchmark
 
 class BenchmarkPacketMod(P4Benchmark):
 
-    def __init__(self, nb_operations, nb_fields, offer_load):
-        parent_dir = 'result/field_write'
-        directory = '{0}/{1}/{2}/{3}'.format(parent_dir,
-                        nb_fields, nb_operations, offer_load)
+    def __init__(self, nb_operations, offer_load):
+        parent_dir = 'result/Set-Field'
+        directory = '{0}/{1}/{2}'.format(parent_dir, nb_operations, offer_load)
         super(BenchmarkPacketMod, self).__init__(parent_dir, directory, offer_load)
         self.nb_operations = nb_operations
-        self.nb_fields = nb_fields
         if not os.path.exists(self.directory):
             os.makedirs(self.directory)
 
     def compile_p4_program(self):
-        ret = benchmark_field_write(self.nb_operations, self.nb_fields)
+        ret = benchmark_field_write(self.nb_operations)
         assert (ret == True)
         prog = 'main'
         json_path = 'output/%s.json' % prog
@@ -32,19 +30,12 @@ class BenchmarkPacketMod(P4Benchmark):
             p.wait()
             assert (p.returncode == 0)
 
-def run(nb_operations=2, nb_fields=2):
-    offer_load = 2600000
-    p = BenchmarkPacketMod(nb_operations, nb_fields, offer_load)
-    # compile
-    p.compile_p4_program()
-    p.start()
-    while (p.has_lost_packet() == True):
-        offer_load /= 2
-        p = BenchmarkPacketMod(nb_operations, nb_fields, offer_load)
-        p.start()
-    while (p.has_lost_packet() != True):
-        offer_load += 100000
-        p = BenchmarkPacketMod(nb_operations, nb_fields, offer_load)
+def run(nb_operations=2):
+    rates = [500000, 1000000]
+    for rate in rates:
+        p = BenchmarkPacketMod(nb_operations, rate)
+        # compile
+        p.compile_p4_program()
         p.start()
     p.run_analyser()
 
@@ -52,9 +43,5 @@ if __name__=='__main__':
     parser = argparse.ArgumentParser(description='P4 Benchmark')
     parser.add_argument('-n', '--operation', default=2, type=int,
                         help='number of operations from start')
-    parser.add_argument('-f', '--field', default=2, type=int,
-                        help='number of fields for each header')
     args = parser.parse_args()
-    if args.field < args.operation:
-        args.field = args.operation
-    run(args.operation, args.field)
+    run(args.operation)

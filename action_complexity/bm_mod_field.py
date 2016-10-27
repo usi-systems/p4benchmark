@@ -16,9 +16,10 @@ def generate_pisces_command(nb_operation, out_dir):
     rules = add_pisces_forwarding_rule()
     actions = ''
     for i in range(nb_operation):
+        match = 'udp_dstPort=0x9091'
         actions += 'set_field:1->header_0_field_{0},'.format(i)
     actions += 'deparse,output:NXM_NX_REG0[]'
-    rules += add_openflow_rule(1, 12345, actions)
+    rules += add_openflow_rule(1, 12345, match, actions)
 
     with open ('%s/pisces_rules.txt' % out_dir, 'w') as out:
         out.write(rules)
@@ -42,6 +43,7 @@ def benchmark_field_write(nb_operations, nb_fields):
 
     nb_headers = 1
     program  = add_headers_and_parsers(nb_headers, nb_fields)
+    program += nop_action()
 
     action_name = 'mod_headers'
     program += benchmark_modify_header_overhead(action_name, nb_operations)
@@ -49,7 +51,9 @@ def benchmark_field_write(nb_operations, nb_fields):
     program += forward_table()
 
     table_name = 'test_tbl'
-    program += add_table_no_match(table_name, '\t\t{0};'.format(action_name))
+    match = 'udp.dstPort : exact;'
+    actions = '\t\t_nop;\n\t\t{0};'.format(action_name)
+    program += add_table(table_name, match, actions, 4)
 
 
     program += control(fwd_tbl, apply_table(table_name))
@@ -57,7 +61,8 @@ def benchmark_field_write(nb_operations, nb_fields):
     with open ('%s/main.p4' % out_dir, 'w') as out:
         out.write(program)
 
-    commands = add_default_rule(table_name, action_name)
+    commands = add_default_rule(table_name, '_nop')
+    commands += add_rule(table_name, action_name, 0x9091)
     commands += cli_commands(fwd_tbl)
     with open ('%s/commands.txt' % out_dir, 'w') as out:
         out.write(commands)

@@ -32,27 +32,29 @@ class BenchmarkPacketMod(P4Benchmark):
             p.wait()
             assert (p.returncode == 0)
 
-def run(nb_operations=5, nb_fields=2):
-    while(nb_operations <= 40):
-        offer_load = 100000
+def run(nb_operations=2, nb_fields=2):
+    offer_load = 2600000
+    p = BenchmarkPacketMod(nb_operations, nb_fields, offer_load)
+    # compile
+    p.compile_p4_program()
+    p.start()
+    while (p.has_lost_packet() == True):
+        offer_load /= 2
         p = BenchmarkPacketMod(nb_operations, nb_fields, offer_load)
-        # compile
-        p.compile_p4_program()
         p.start()
-        while (p.has_lost_packet() != True):
-            offer_load += 100000
-            p = BenchmarkPacketMod(nb_operations, nb_fields, offer_load)
-            p.start()
-
-        nb_operations += 5
+    while (p.has_lost_packet() != True):
+        offer_load += 100000
+        p = BenchmarkPacketMod(nb_operations, nb_fields, offer_load)
+        p.start()
     p.run_analyser()
 
 if __name__=='__main__':
     parser = argparse.ArgumentParser(description='P4 Benchmark')
-    parser.add_argument('-n', '--operation', default=5, type=int,
+    parser.add_argument('-n', '--operation', default=2, type=int,
                         help='number of operations from start')
     parser.add_argument('-f', '--field', default=2, type=int,
                         help='number of fields for each header')
     args = parser.parse_args()
-
+    if args.field < args.operation:
+        args.field = args.operation
     run(args.operation, args.field)

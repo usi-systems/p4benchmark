@@ -28,6 +28,16 @@ def p4_define():
     p4_define = read_template('template/define.txt')
     return p4_define
 
+def ethernet_header():
+    """
+    This method returns the Ethernet header definition and its parser
+
+    :returns:  str -- the code in plain text
+    :raises: None
+
+    """
+    return read_template('template/headers/ethernet.txt')
+
 def ethernet():
     """
     This method returns the Ethernet header definition and its parser
@@ -461,7 +471,7 @@ def add_pisces_forwarding_rule():
     """
     return read_template('template/commands/pisces_forward.txt')
 
-def add_openflow_rule(tbl_id, priority, actions):
+def add_openflow_rule(tbl_id, priority, match, actions):
     """
     This method returns the command for installing a rule to a table
 
@@ -478,6 +488,7 @@ def add_openflow_rule(tbl_id, priority, actions):
     binding = {
         'tbl_id': tbl_id,
         'priority': priority,
+        'match'   : match,
         'actions' : actions,
     }
     return read_template('template/commands/pisces_commands.txt', binding)

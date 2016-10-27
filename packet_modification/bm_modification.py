@@ -13,7 +13,7 @@ def generate_pisces_command(nb_headers, out_dir):
         match = 'udp_dstPort=0x9091'
         actions += 'set_field:1->header_{0}_field_0,'.format(i)
     actions += 'set_field:0x9091->udp_dstPort,deparse,output:NXM_NX_REG0[]'
-    rules += add_openflow_rule(1, 12345, match, actions)
+    rules += add_openflow_rule(1, 32768, match, actions)
 
     with open ('%s/pisces_rules.txt' % out_dir, 'w') as out:
         out.write(rules)

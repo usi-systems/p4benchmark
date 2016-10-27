@@ -5,6 +5,21 @@ from p4gen.genpcap import get_pipeline_pcap
 from p4gen import copy_scripts
 from p4gen.p4template import *
 
+def generate_pisces_command(nb_tables, out_dir):
+    rules = add_pisces_forwarding_rule()
+    actions = ''
+    for i in range(nb_tables-1):
+        match = ''
+        actions = 'resubmit(,{0})'.format(i+2)
+        rules += add_openflow_rule(i+1, 32768, match, actions)
+
+    actions = 'deparse,output:NXM_NX_REG0[]'
+    rules += add_openflow_rule(nb_tables, 32768, '', actions)
+
+    with open ('%s/pisces_rules.txt' % out_dir, 'w') as out:
+        out.write(rules)
+
+
 def benchmark_pipeline(nb_tables, table_size):
     """
     This method generate the P4 program to benchmark the processing pipeline
@@ -46,5 +61,5 @@ def benchmark_pipeline(nb_tables, table_size):
     copy_scripts(out_dir)
 
     get_pipeline_pcap(out_dir)
-
+    generate_pisces_command(nb_tables, out_dir)
     return True

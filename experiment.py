@@ -31,10 +31,24 @@ def compile_p4_program(host, path, output_dir):
     ssh = subprocess.Popen(shlex.split(cmd), shell=False)
     ssh.wait()
 
-def dump_flows(host):
+def dump_flows(host, output_dir):
     cmd = "ssh -t {0} 'sudo temp/utilities/ovs-ofctl --protocols=OpenFlow15 dump-flows br0'".format(host)
     print cmd
-    ssh = subprocess.Popen(shlex.split(cmd), shell=False)
+    with open('%s/dump_flows.txt' % (output_dir), 'w') as out:
+        ssh = subprocess.Popen(shlex.split(cmd),
+                                stdout=out,
+                                stderr=out,
+                                shell=False)
+    ssh.wait()
+
+def dump_ports(host, output_dir):
+    cmd = "ssh -t {0} 'sudo temp/utilities/ovs-ofctl --protocols=OpenFlow15 dump-ports br0'".format(host)
+    print cmd
+    with open('%s/dump_ports.txt' % (output_dir), 'w') as out:
+        ssh = subprocess.Popen(shlex.split(cmd),
+                                stdout=out,
+                                stderr=out,
+                                shell=False)
     ssh.wait()
 
 
@@ -61,7 +75,7 @@ def has_lost_packet(path):
 
 
 def run_moongen(host, path, moongen_path, output_dir, load=1000):
-    cmd = "ssh -t {0} 'sudo {1}/build/MoonGen {2}/pktgen/lua_config/pcap_ts_timer.lua 0 1 temp/output/test.pcap -l {3}'".format(host, moongen_path, path, load)
+    cmd = "ssh -t {0} 'sudo {1}/build/MoonGen {2}/pktgen/lua_config/hardware-timestamping.lua 0 1 temp/output/test.pcap -l {3}'".format(host, moongen_path, path, load)
     print cmd
     with open('%s/MoonGen.txt' % (output_dir), 'w') as out:
         ssh = subprocess.Popen(shlex.split(cmd),
@@ -71,7 +85,7 @@ def run_moongen(host, path, moongen_path, output_dir, load=1000):
     return ssh
 
 def copy_histogram(host, moongen_path, output_dir):
-    cmd = "scp {0}:{1}/histogram.csv {2}/".format(host, moongen_path, output_dir)
+    cmd = "scp {0}:histogram.csv {2}/".format(host, moongen_path, output_dir)
     print cmd
     ssh = subprocess.Popen(shlex.split(cmd), shell=False)
     ssh.wait()
@@ -115,7 +129,7 @@ def stop_pisces(host, path):
 
 
 def run_experiment_with_MoonGen(path, moongen_path, variable_path, rule_file):
-    load = 1000
+    load = 10000
     while load <= 10000:
         output_path = '{0}/{1}'.format(variable_path, load)
         if not os.path.exists(output_path):
@@ -128,7 +142,8 @@ def run_experiment_with_MoonGen(path, moongen_path, variable_path, rule_file):
         moongen.wait()
         copy_histogram('node98', moongen_path, output_path)
 
-        dump_flows('node97')
+        dump_flows('node97', output_path)
+        dump_ports('node97', output_path)
         stop_pisces('node97', path)
         switch.wait()
         # wait 10s before starting new experiments
@@ -148,7 +163,6 @@ def run_experiment_with_pktgen(path, variable_path, rule_file):
         # wait for switch to come up
         time.sleep(5)
         run_my_pktgen('node98', path, output_path, load)
-        dump_flows('node97')
         stop_pisces('node97', path)
         switch.wait()
         packet_lost = has_lost_packet(output_path)
@@ -171,7 +185,7 @@ if __name__ == '__main__':
                 help='path to p4benchmark on the remote server')
     parser.add_argument('--moongen-path', default='/home/danghu/MoonGen',
                 help='path to MoonGen on the remote server')
-    parser.add_argument('--moongen', default=False, action='store_true',
+    parser.add_argument('--moongen', default=True, action='store_true',
                 help='use p4benchmark packet generator')
     args = parser.parse_args()
 
@@ -204,10 +218,13 @@ if __name__ == '__main__':
         compile_p4_program('node97', args.path, variable_path)
 
         if args.moongen:
-            run_experiment_with_MoonGen(args.path, args.moongen_path, variable_path, '~/temp/output/pisces_rules.txt')
+            if args.feature == features[0]:
+                run_experiment_with_MoonGen(args.path, args.moongen_path, variable_path, args.path + '/pisces/commands.txt')
+            else:
+                run_experiment_with_MoonGen(args.path, args.moongen_path, variable_path, '~/temp/output/pisces_rules.txt')
         else:
             if args.feature == features[0]:
-                run_experiment_with_pktgen(args.path, variable_path, args.path + 'pisces/commands.txt')
+                run_experiment_with_pktgen(args.path, variable_path, args.path + '/pisces/commands.txt')
             elif args.feature == features[1]:
                 run_experiment_with_pktgen(args.path, variable_path, '~/temp/output/pisces_rules.txt')
             elif args.feature == features[2]:

@@ -10,14 +10,14 @@ local log    = require "log"
 local stats	 = require "stats"
 local pcap	 = require "pcap"
 
-local RUN_TIME = 30
 
 function configure(parser)
 	parser:description("Demonstrate and test hardware timestamping capabilities.\n")
 	parser:argument("txPort", "Device use for tx."):args(1):convert(tonumber)
 	parser:argument("rxPort", "Device use for rx."):args(1):convert(tonumber)
-	parser:argument("file", "File to replay."):args(1)
-	parser:option("-l --load", "replay as fast as possible"):default(1000):convert(tonumber):target("load")
+	parser:option("-f --file", "File to replay."):default(nil):convert(tostring):target('file')
+	parser:option("-r --rate", "Sending rate"):default(1000):convert(tonumber):target("rate")
+	parser:option("-t --time", "Set running duration"):default(30):convert(tonumber):target("time")
 	local args = parser:parse()
 	return args
 end
@@ -31,28 +31,24 @@ function master(args)
 	local rxQueue0 = rxDev:getRxQueue(1)
 	local rxQueue1 = rxDev:getRxQueue(1)
 
-	txQueue0:setRate(args.load)
+	txQueue0:setRate(args.rate)
 
-	mg.startTask("loadSlave", txQueue0, rxDev, args.file)
-	-- mg.startTask("timestamper", txQueue1, rxQueue1, 319)
-
-	-- mg.startTask("timestamper", txQueue0, rxQueue0):wait()
-	-- mg.startTask("timestamper", txQueue0, rxQueue1):wait()
-	-- mg.startTask("timestamper", txQueue0, rxQueue0, 1234):wait()
-	-- mg.startTask("timestamper", txQueue0, rxQueue1, 319):wait()
-	-- mg.startTask("timestamper", txQueue0, rxQueue1, 319)
-	-- mg.startTask("flooder", txQueue1, 319)
+	if args.file then
+		mg.startTask("loadSlave", txQueue0, rxDev, args.file, args.time)
+	else
+		mg.startTask("timestamper", txQueue1, rxQueue1, 319, args.time)
+	end
 
 	mg.waitForTasks()
 end
 
 
-function timestamper(txQueue, rxQueue, udp, randomSrc, vlan)
+function timestamper(txQueue, rxQueue, udp, run_time, randomSrc, vlan)
 	local filter = rxQueue.qid ~= 0
 	log:info("Testing timestamping %s %s rx filtering for %d seconds.",
 		udp and "UDP packets to port " .. udp or "L2 PTP packets",
 		filter and "with" or "without",
-		RUN_TIME
+		run_time
 	)
 	if randomSrc then
 		log:info("Using multiple flows, this can be slower on some NICs.")
@@ -60,7 +56,7 @@ function timestamper(txQueue, rxQueue, udp, randomSrc, vlan)
 	if vlan then
 		log:info("Adding VLAN tag, this is not supported on some NICs.")
 	end
-	local runtime = timer:new(RUN_TIME)
+	local runtime = timer:new(run_time)
 	local timestamper
 	if udp then
 		timestamper = ts:newUdpTimestamper(txQueue, rxQueue)
@@ -96,13 +92,13 @@ function timestamper(txQueue, rxQueue, udp, randomSrc, vlan)
 	hist:save("histogram.csv")
 end
 
-function loadSlave(queue, rxDev, file)
+function loadSlave(queue, rxDev, file, run_time)
 	local mempool = memory:createMemPool()
 	local bufs = mempool:bufArray()
 	local pcapFile = pcap:newReader(file)
 	local txCtr = stats:newDevTxCounter(queue, "plain")
 	local rxCtr = stats:newDevRxCounter(rxDev, "plain")
-	local runtime = timer:new(RUN_TIME)
+	local runtime = timer:new(run_time)
 	while runtime:running() and mg.running() do
 		local n = pcapFile:read(bufs)
 		if n == 0 then

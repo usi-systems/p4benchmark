@@ -19,7 +19,7 @@ class BenchmarkPacketMod(P4Benchmark):
             os.makedirs(self.directory)
 
     def compile_p4_program(self):
-        ret = benchmark_field_write(self.nb_operations)
+        ret = benchmark_field_write(self.nb_operations, do_checksum=True)
         assert (ret == True)
         prog = 'main'
         json_path = 'output/%s.json' % prog

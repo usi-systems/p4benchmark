@@ -1,4 +1,4 @@
-    #!/usr/bin/env python
+#!/usr/bin/env python
 import argparse
 import subprocess
 import shlex
@@ -66,8 +66,11 @@ def run_pisces(host, path, output_dir, rule_file):
     return ssh
 
 
-def run_moongen(host, path, moongen_path, output_dir, load=1000):
-    cmd = "ssh -t {0} 'sudo {1}/build/MoonGen {2}/pktgen/lua_config/hardware-timestamping.lua 0 1 temp/output/test.pcap -l {3}'".format(host, moongen_path, path, load)
+def run_moongen(host, path, moongen_path, output_dir, metric, rate=1000):
+    if metric == 'throughput':
+        cmd = "ssh -t {0} 'sudo {1}/build/MoonGen {2}/pktgen/lua_config/hardware-timestamping.lua 0 1 -f temp/output/test.pcap --rate {3}'".format(host, moongen_path, path, rate)
+    else:
+        cmd = "ssh -t {0} 'sudo {1}/build/MoonGen {2}/pktgen/lua_config/hardware-timestamping.lua 0 1 --rate {3}'".format(host, moongen_path, path, rate)
     print cmd
     with open('%s/MoonGen.txt' % (output_dir), 'w') as out:
         ssh = subprocess.Popen(shlex.split(cmd),
@@ -90,28 +93,27 @@ def stop_pisces(host, path):
     ssh = subprocess.Popen(shlex.split(cmd), shell=False)
     ssh.wait()
 
-def run_N_experiments(path, moongen_path, variable_path, rule_file, N=1):
+def run_N_experiments(path, moongen_path, variable_path, metric, N=1):
     i = 0
     while i < N:
-        load = 10000
-        while load <= 10000:
-            output_path = '{0}/{1}/{2}'.format(variable_path, i, load)
-            if not os.path.exists(output_path):
-                os.makedirs(output_path)
+        # line rate
+        rate = 10000
+        output_path = '{0}/{1}/{2}'.format(variable_path, i, rate)
+        if not os.path.exists(output_path):
+            os.makedirs(output_path)
 
-            switch = run_pisces('node97', path, output_path, rule_file)
-            # wait for switch to come up
-            time.sleep(5)
-            moongen = run_moongen('node98', path, moongen_path, output_path, load)
-            moongen.wait()
-            copy_histogram('node98', moongen_path, output_path)
+        switch = run_pisces('node97', path, output_path, '~/temp/output/pisces_rules.txt')
+        # wait for switch to come up
+        time.sleep(5)
+        moongen = run_moongen('node98', path, moongen_path, output_path, metric, rate)
+        moongen.wait()
+        copy_histogram('node98', moongen_path, output_path)
 
-            dump_flows('node97', output_path)
-            stop_pisces('node97', path)
-            switch.wait()
-            # wait 10s before starting new experiments
-            time.sleep(5)
-            load += 1000
+        dump_flows('node97', output_path)
+        stop_pisces('node97', path)
+        switch.wait()
+        # wait 10s before starting new experiments
+        time.sleep(5)
         i += 1
 
 
@@ -120,6 +122,8 @@ if __name__ == '__main__':
     parser.add_argument('output', help='output directory of the experiment')
     parser.add_argument('--feature', choices=features,
                 help='select a feature for benchmarking')
+    parser.add_argument('--measure', choices=['latency', 'throughput'], default='latency',
+                help='choices for measuring metric')
     parser.add_argument('--path', default='/home/danghu/workspace/p4benchmark',
                 help='path to p4benchmark on the remote server')
     parser.add_argument('--moongen-path', default='/home/danghu/MoonGen',
@@ -136,4 +140,4 @@ if __name__ == '__main__':
         gen_p4_program('node98', args.feature, args.path, variable, variable_path)
 
         compile_p4_program('node97', args.path, variable_path)
-        run_N_experiments(args.path, args.moongen_path, variable_path,'~/temp/output/pisces_rules.txt', 5)
+        run_N_experiments(args.path, args.moongen_path, variable_path, args.measure, 5)

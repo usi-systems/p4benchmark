@@ -5,6 +5,11 @@ from p4gen.genpcap import get_parser_header_pcap, get_parser_field_pcap
 from p4gen.p4template import *
 from p4gen import copy_scripts
 
+def generate_pisces_command(out_dir):
+    rules = add_pisces_forwarding_rule()
+    with open ('%s/pisces_rules.txt' % out_dir, 'w') as out:
+        out.write(rules)
+
 class ParseNode():
     def __init__(self, parent=None, node_name='', code=''):
         self.parent = parent
@@ -162,6 +167,7 @@ def benchmark_parser_header(nb_headers, nb_fields):
     program = add_forwarding_table(output_dir, program)
     write_output(output_dir, program)
     get_parser_header_pcap(nb_fields, nb_headers, 0x9091, output_dir)
+    generate_pisces_command(output_dir)
 
     return True
 
@@ -181,5 +187,6 @@ def benchmark_parser_with_header_field(nb_fields):
     program = add_forwarding_table(output_dir, program)
     write_output(output_dir, program)
     get_parser_field_pcap(nb_fields, 0x9091, output_dir)
+    generate_pisces_command(output_dir)
 
     return True

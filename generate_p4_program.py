@@ -43,9 +43,9 @@ def main():
     args = parser.parse_args()
 
     if args.parser_header:
-        benchmark_parser_header(args.headers, args.fields)
+        benchmark_parser_header(args.headers, args.fields, do_checksum=True)
     if args.parser_field:
-        benchmark_parser_with_header_field(args.fields)
+        benchmark_parser_with_header_field(args.fields, do_checksum=True)
     elif args.pipeline:
         benchmark_pipeline(args.tables, args.table_size)
     elif args.mod_packet:

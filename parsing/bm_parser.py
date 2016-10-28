@@ -5,8 +5,15 @@ from p4gen.genpcap import get_parser_header_pcap, get_parser_field_pcap
 from p4gen.p4template import *
 from p4gen import copy_scripts
 
-def generate_pisces_command(out_dir):
+def generate_pisces_command(out_dir, checksum=False):
     rules = add_pisces_forwarding_rule()
+    actions = ''
+    if checksum:
+        ip_checksum = 'calc_fields_update(ipv4_hdrChecksum,csum16,fields:ipv4_version_ihl,ipv4_diffserv,ipv4_totalLen,ipv4_identification,ipv4_flags_fragOffset,ipv4_ttl,ipv4_protocol,ipv4_srcAddr,ipv4_dstAddr),'
+        actions += ip_checksum
+    actions += 'deparse,output:NXM_NX_REG0[]'
+    rules += add_openflow_rule(1, 32768, '', actions)
+
     with open ('%s/pisces_rules.txt' % out_dir, 'w') as out:
         out.write(rules)
 
@@ -114,7 +121,7 @@ def parser_complexity(depth, fanout):
 
     return True
 
-def add_headers_and_parsers(nb_headers, nb_fields):
+def add_headers_and_parsers(nb_headers, nb_fields, do_checksum=True):
     """
     This method adds Ethernet, IPv4, TCP, UDP, and a number of generic headers
     which follow the UDP header. The UDP destination port 0x9091 is used to
@@ -127,7 +134,7 @@ def add_headers_and_parsers(nb_headers, nb_fields):
     :returns: str -- the header and parser definition
 
     """
-    program = p4_define() + ethernet() + ipv4() + tcp()
+    program = p4_define() + ethernet() + ipv4(do_checksum) + tcp()
     program += udp(select_case(0x9091, 'parse_header_0'))
 
     field_dec = ''
@@ -149,7 +156,7 @@ def add_headers_and_parsers(nb_headers, nb_fields):
     return program
 
 
-def benchmark_parser_header(nb_headers, nb_fields):
+def benchmark_parser_header(nb_headers, nb_fields, do_checksum=True):
     """
     This method generate the P4 program to benchmark the P4 parser
 
@@ -163,15 +170,15 @@ def benchmark_parser_header(nb_headers, nb_fields):
     output_dir = 'output'
     if not os.path.exists(output_dir):
        os.makedirs(output_dir)
-    program  = add_headers_and_parsers(nb_headers, nb_fields)
+    program  = add_headers_and_parsers(nb_headers, nb_fields, do_checksum)
     program = add_forwarding_table(output_dir, program)
     write_output(output_dir, program)
     get_parser_header_pcap(nb_fields, nb_headers, 0x9091, output_dir)
-    generate_pisces_command(output_dir)
+    generate_pisces_command(output_dir, do_checksum)
 
     return True
 
-def benchmark_parser_with_header_field(nb_fields):
+def benchmark_parser_with_header_field(nb_fields, do_checksum=True):
     """
     This method generate the P4 program to benchmark the P4 parser
 
@@ -183,7 +190,7 @@ def benchmark_parser_with_header_field(nb_fields):
     output_dir = 'output'
     if not os.path.exists(output_dir):
        os.makedirs(output_dir)
-    program  = add_headers_and_parsers(1, nb_fields)
+    program  = add_headers_and_parsers(1, nb_fields, do_checksum)
     program = add_forwarding_table(output_dir, program)
     write_output(output_dir, program)
     get_parser_field_pcap(nb_fields, 0x9091, output_dir)

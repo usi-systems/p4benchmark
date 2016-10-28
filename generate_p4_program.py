@@ -21,6 +21,8 @@ def main():
                             help='memory access benchmark')
     parser.add_argument('--mod-packet', default=False, action='store_true',
                             help='packet modification benchmark')
+    parser.add_argument('--checksum', default=False, action='store_true',
+                            help='perform update checksum')
     parser.add_argument('--action-complexity', default=False, action='store_true',
                             help='action complexity benchmark')
     parser.add_argument('--tables', default=1, type=int, help='number of tables')
@@ -43,9 +45,9 @@ def main():
     args = parser.parse_args()
 
     if args.parser_header:
-        benchmark_parser_header(args.headers, args.fields, do_checksum=True)
+        benchmark_parser_header(args.headers, args.fields, do_checksum=args.checksum)
     if args.parser_field:
-        benchmark_parser_with_header_field(args.fields, do_checksum=True)
+        benchmark_parser_with_header_field(args.fields, do_checksum=args.checksum)
     elif args.pipeline:
         benchmark_pipeline(args.tables, args.table_size)
     elif args.mod_packet:
@@ -53,7 +55,7 @@ def main():
     elif args.memory:
         benchmark_memory(args.registers, args.element_width, args.nb_element, args.nb_operations, args.operation_op == 'w')
     elif args.action_complexity:
-        benchmark_field_write(args.nb_operations, do_checksum=True)
+        benchmark_field_write(args.nb_operations, do_checksum=args.checksum)
 
 if __name__=='__main__':
     main()

@@ -492,3 +492,9 @@ def add_openflow_rule(tbl_id, priority, match, actions):
         'actions' : actions,
     }
     return read_template('template/commands/pisces_commands.txt', binding)
+
+def ptp_header():
+    """
+    This method returns the ptp header definition
+    """
+    return read_template('template/headers/ptp.txt')

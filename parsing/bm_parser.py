@@ -135,7 +135,15 @@ def add_headers_and_parsers(nb_headers, nb_fields, do_checksum=True):
 
     """
     program = p4_define() + ethernet() + ipv4(do_checksum) + tcp()
-    program += udp(select_case(0x9091, 'parse_header_0'))
+    program += udp(select_case(319, 'parse_ptp'))
+
+    program += ptp_header()
+    ptp_next_states = ''
+    if (nb_headers > 0):
+        ptp_next_states += select_case(0x10, 'parse_header_0')
+    ptp_next_states += select_case('default', 'ingress')
+    program += add_parser('ptp_t', 'ptp', 'parse_ptp',
+                            'ptptype', ptp_next_states)
 
     field_dec = ''
     for i in range(nb_fields):

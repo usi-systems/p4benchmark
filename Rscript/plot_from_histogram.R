@@ -37,7 +37,7 @@ my_theme <- function() {
 plot_latency <- function(df) {
     df$mean <- df$mean / 1000
     df$sd <- df$sd / 1000
-    pdf('set_field_latency.pdf')
+    pdf('set_field_latency_mean.pdf')
     ggplot(df, aes(x=variable, y=mean)) +
     geom_bar(position=position_dodge(), stat="identity") +
     geom_errorbar(aes(ymin=mean-sd, ymax=mean+sd),
@@ -47,7 +47,21 @@ plot_latency <- function(df) {
     my_theme() +
     labs(x="Number of Set-Field Actions", y="Latency (\U00B5s) ")+
     scale_x_discrete(limits=c('1', '2', '4', '8', '16', '32', '64'))
+}
 
+plot_latency_99 <- function(df) {
+    df$mean_99th <- df$mean_99th / 1000
+    df$sd <- df$sd / 1000
+    pdf('set_field_latency_mean_99.pdf')
+    ggplot(df, aes(x=variable, y=mean_99th)) +
+    geom_bar(position=position_dodge(), stat="identity") +
+    geom_errorbar(aes(ymin=mean_99th-sd, ymax=mean_99th+sd),
+                  width=.2,                    # Width of the error bars
+                  position=position_dodge(.9)) +
+    theme_bw() +
+    my_theme() +
+    labs(x="Number of Set-Field Actions", y="Latency (\U00B5s) ")+
+    scale_x_discrete(limits=c('1', '2', '4', '8', '16', '32', '64'))
 }
 
 args <- commandArgs(trailingOnly = TRUE)
@@ -76,3 +90,4 @@ result <- ddply(df, c('variable', 'rate'), summarise, mean=mean(mean_lat), sd=sd
 
 print(result)
 plot_latency(result)
+plot_latency_99(result)

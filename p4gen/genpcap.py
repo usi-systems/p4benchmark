@@ -1,6 +1,28 @@
 from scapy.all import Packet, ShortField, XBitField
 from scapy.all import Ether, IP, UDP, Padding
-from scapy.all import wrpcap
+from scapy.all import wrpcap, bind_layers
+
+class PTP(Packet):
+    """Precision Time Protocol"""
+    name = "PTP protocol"
+    fields_desc = [
+        XBitField('type_', 0x10, 8),
+        XBitField('version', 0x02, 8),
+        ShortField('messageLength', 0x36),
+        XBitField('subdomain', 0x00, 8),
+        ShortField('flags', 0),
+        XBitField('correction', 0x00, 48),
+        XBitField('clockIdentity', 0x008063FFFF0009BA, 64),
+        ShortField('sourcePortID', 1),
+        ShortField('sequenceID', 0x9E48),
+        XBitField('control', 0x05, 8),
+        XBitField('logMessagePeriod', 0x0F, 8),
+        XBitField('originTimestamp', 0x000045B111510472F9C1, 80)
+    ]
+
+bind_layers(UDP, PTP, dport=319)
+bind_layers(UDP, PTP, dport=320)
+
 
 def add_eth_ip_udp_headers(dport):
     eth = Ether(src='0C:C4:7A:A3:25:34', dst='0C:C4:7A:A3:25:35')
@@ -40,21 +62,23 @@ def add_padding(pkt, packet_size):
         pkt = pkt/pad
     return pkt
 
-def get_parser_header_pcap(nb_fields, nb_headers, udp_dest_port, out_dir, packet_size=128):
-    pkt = add_eth_ip_udp_headers(udp_dest_port)
+def get_parser_header_pcap(nb_fields, nb_headers, udp_dest_port, out_dir, packet_size=256):
+    pkt = add_eth_ip_udp_headers(319)
+    pkt /= PTP()
     pkt /= add_layers(nb_fields, nb_headers)
 
     pkt = add_padding(pkt, packet_size)
     wrpcap('%s/test.pcap' % out_dir, pkt)
 
-def get_parser_field_pcap(nb_fields, udp_dest_port, out_dir, packet_size=128):
-    pkt = add_eth_ip_udp_headers(udp_dest_port)
+def get_parser_field_pcap(nb_fields, udp_dest_port, out_dir, packet_size=256):
+    pkt = add_eth_ip_udp_headers(319)
+    pkt /= PTP()
     pkt /= vary_header_field(nb_fields)
 
     pkt = add_padding(pkt, packet_size)
     wrpcap('%s/test.pcap' % out_dir, pkt)
 
-def get_read_state_pcap(udp_dest_port, out_dir, packet_size=128):
+def get_read_state_pcap(udp_dest_port, out_dir, packet_size=256):
 
     class MemTest(Packet):
         name = "P4Bench Message for MemTest"
@@ -70,7 +94,7 @@ def get_read_state_pcap(udp_dest_port, out_dir, packet_size=128):
     pkt = add_padding(pkt, packet_size)
     wrpcap('%s/test.pcap' % out_dir, pkts)
 
-def get_write_state_pcap(udp_dest_port, out_dir, packet_size=128):
+def get_write_state_pcap(udp_dest_port, out_dir, packet_size=256):
 
     class MemTest(Packet):
         name = "P4Bench Message for MemTest"
@@ -87,13 +111,13 @@ def get_write_state_pcap(udp_dest_port, out_dir, packet_size=128):
     pkt = add_padding(pkt, packet_size)
     wrpcap('%s/test.pcap' % out_dir, pkt)
 
-def get_pipeline_pcap(out_dir, packet_size=128):
+def get_pipeline_pcap(out_dir, packet_size=256):
     pkt = add_eth_ip_udp_headers(15432)
     pkt = add_padding(pkt, packet_size)
     wrpcap('%s/test.pcap' % out_dir, pkt)
 
 
-def get_packetmod_pcap(nb_headers, nb_fields, mod_type, out_dir, packet_size=128):
+def get_packetmod_pcap(nb_headers, nb_fields, mod_type, out_dir, packet_size=256):
     pkt = Packet()
     if mod_type == 'add':
         pkt = add_eth_ip_udp_headers(15432)
@@ -107,7 +131,7 @@ def get_packetmod_pcap(nb_headers, nb_fields, mod_type, out_dir, packet_size=128
 
     wrpcap('%s/test.pcap' % out_dir, pkt)
 
-def get_set_field_pcap(out_dir, packet_size=128):
+def get_set_field_pcap(out_dir, packet_size=256):
     pkt = add_eth_ip_udp_headers(0x9091)
     pkt = add_padding(pkt, packet_size)
     wrpcap('%s/test.pcap' % out_dir, pkt)

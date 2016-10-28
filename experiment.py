@@ -9,9 +9,18 @@ import time
 
 features = ['parse-field', 'set-field', 'modify', 'processing']
 
-def gen_p4_program(host, feature, path, variable, output_dir):
+def copy_p4_program(host, input_program):
+    cmd = "scp {0} {1}:temp/output/main.p4".format(input_program, host)
+    print cmd
+    ssh = subprocess.Popen(shlex.split(cmd))
+    ssh.wait()
+
+def gen_p4_program(host, feature, path, variable, output_dir, checksum):
     cmd  = "ssh {0} 'mkdir -p temp; cd temp;".format(host)
-    cmd += " python {0}/generate_p4_program.py".format(path)
+    if checksum:
+        cmd += " python {0}/generate_p4_program.py --checksum".format(path)
+    else:
+        cmd += " python {0}/generate_p4_program.py".format(path)
     if feature == features[0]:
         cmd += " --parser-header --headers {0}'".format(variable)
     elif feature == features[1]:
@@ -128,16 +137,18 @@ if __name__ == '__main__':
                 help='path to p4benchmark on the remote server')
     parser.add_argument('--moongen-path', default='/home/danghu/MoonGen',
                 help='path to MoonGen on the remote server')
+    parser.add_argument('--checksum', default=False, action='store_true',
+                            help='perform update checksum')
     args = parser.parse_args()
 
 
-    for variable in [1, 2, 4, 8, 16]:
+    for variable in [1, 2, 4, 8, 16, 32, 64]:
         variable_path = '{0}/{1}'.format(args.output, variable)
         if not os.path.exists(variable_path):
            os.makedirs(variable_path)
 
-        gen_p4_program('node97', args.feature, args.path, variable, variable_path)
-        gen_p4_program('node98', args.feature, args.path, variable, variable_path)
+        gen_p4_program('node97', args.feature, args.path, variable, variable_path, args.checksum)
+        gen_p4_program('node98', args.feature, args.path, variable, variable_path, args.checksum)
 
         compile_p4_program('node97', args.path, variable_path)
         run_N_experiments(args.path, args.moongen_path, variable_path, args.measure, 5)

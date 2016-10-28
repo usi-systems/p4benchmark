@@ -18,6 +18,7 @@ function configure(parser)
 	parser:option("-f --file", "File to replay."):default(nil):convert(tostring):target('file')
 	parser:option("-r --rate", "Sending rate"):default(1000):convert(tonumber):target("rate")
 	parser:option("-t --time", "Set running duration"):default(30):convert(tonumber):target("time")
+	parser:option("-n --number", "Number of headers"):default(2):convert(tonumber):target("number")
 	local args = parser:parse()
 	return args
 end
@@ -36,50 +37,34 @@ function master(args)
 	if args.file then
 		mg.startTask("loadSlave", txQueue0, rxDev, args.file, args.time)
 	else
-		mg.startTask("timestamper", txQueue1, rxQueue1, 319, args.time)
+		mg.startTask("timestamper", txQueue1, rxQueue1, 319, args.time, args.number)
 	end
 
 	mg.waitForTasks()
 end
 
 
-function timestamper(txQueue, rxQueue, udp, run_time, randomSrc, vlan)
+function timestamper(txQueue, rxQueue, udp, run_time, number)
 	local filter = rxQueue.qid ~= 0
 	log:info("Testing timestamping %s %s rx filtering for %d seconds.",
 		udp and "UDP packets to port " .. udp or "L2 PTP packets",
 		filter and "with" or "without",
 		run_time
 	)
-	if randomSrc then
-		log:info("Using multiple flows, this can be slower on some NICs.")
-	end
-	if vlan then
-		log:info("Adding VLAN tag, this is not supported on some NICs.")
-	end
 	local runtime = timer:new(run_time)
-	local timestamper
-	if udp then
-		timestamper = ts:newUdpTimestamper(txQueue, rxQueue)
-	else
-		timestamper = ts:newTimestamper(txQueue, rxQueue)
-	end
+	local timestamper = ts:newUdpTimestamper(txQueue, rxQueue)
 	local hist = hist:new()
 	mg.sleepMillis(1000) -- ensure that the load task is running
 	while mg.running() and runtime:running() do
-		local lat = timestamper:measureLatency(function(buf)
-			if udp then
-				if randomSrc then
-					buf:getUdpPacket().udp:setSrcPort(math.random(1, 1000))
-				end
-                local pkt = buf:getUdpPacket()
-                pkt:fill {
-                        DstPort = udp,
-                        ethSrc = txQueue,
-                        ethDst = rxQueue
-                }
-            end
-			if vlan then
-				buf:setVlan(1234)
+		local lat = timestamper:measureLatency(256, function(buf)
+		    local pkt = buf:getUdpPacket()
+		    pkt:fill {
+		        ethSrc = txQueue,
+		        ethDst = rxQueue,
+		        udpDst = 319
+		    }
+		    for i = 22, 22 + number-1 do
+			    pkt.payload.uint16[i] = i
 			end
 		end)
 		hist:update(lat)

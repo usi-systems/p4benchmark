@@ -1,16 +1,19 @@
 header_type ptp_t {
     fields {
-        ptptype       : 8;
-        version       : 8;
-        ptplength     : 16;
-        domain        : 8;
-        flags         : 16;
-        correction    : 48;
-        clockIdentity : 64;
-        srcPortId     : 8;
-        seqId         : 16;
-        ptpcontrol    : 8;
-        logMsgInt     : 8;
-        originTS      : 80;
+        transportSpecific : 4;
+        messageType       : 4;
+        reserved          : 4;
+        versionPTP        : 4;
+        messageLength     : 16;
+        domainNumber      : 8;
+        reserved2         : 8;
+        flags             : 16;
+        correction        : 64;
+        reserved3         : 32;
+        sourcePortIdentity: 80;
+        sequenceId        : 16;
+        PTPcontrol        : 8;
+        logMessagePeriod  : 8;
+        originTimestamp   : 80;
     }
 }

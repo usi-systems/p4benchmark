@@ -1,4 +1,4 @@
-from scapy.all import Packet, ShortField, XBitField
+from scapy.all import Packet, ShortField, XBitField, IntField
 from scapy.all import Ether, IP, UDP, Padding
 from scapy.all import wrpcap, bind_layers
 
@@ -6,16 +6,19 @@ class PTP(Packet):
     """Precision Time Protocol"""
     name = "PTP protocol"
     fields_desc = [
-        XBitField('type_', 0x10, 8),
-        XBitField('version', 0x02, 8),
-        ShortField('messageLength', 0x36),
-        XBitField('subdomain', 0x00, 8),
-        ShortField('flags', 0),
-        XBitField('correction', 0x00, 48),
-        XBitField('clockIdentity', 0x008063FFFF0009BA, 64),
-        ShortField('sourcePortID', 1),
-        ShortField('sequenceID', 0x9E48),
-        XBitField('control', 0x05, 8),
+        XBitField('transportSpecific', 0x1, 4),
+        XBitField('messageType', 0x0, 4),
+        XBitField('reserved', 0x2, 4),
+        XBitField('versionPTP', 0x2, 4),
+        ShortField('messageLength', 0x2C),
+        XBitField('domainNumber', 0x0, 8),
+        XBitField('reserved2', 0x1, 8),
+        ShortField('flags', 0x0),
+        XBitField('correction', 0x0, 64),
+        IntField('reserved3', 0x0),
+        XBitField('sourcePortIdentity', 0x008063FFFF0009BA, 80),
+        ShortField('sequenceId', 0x9E48),
+        XBitField('PTPcontrol', 0x05, 8),
         XBitField('logMessagePeriod', 0x0F, 8),
         XBitField('originTimestamp', 0x000045B111510472F9C1, 80)
     ]

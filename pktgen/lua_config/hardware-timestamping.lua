@@ -57,14 +57,16 @@ function timestamper(txQueue, rxQueue, udp, run_time, number)
 	mg.sleepMillis(1000) -- ensure that the load task is running
 	while mg.running() and runtime:running() do
 		local lat = timestamper:measureLatency(256, function(buf)
+		    local ptp = buf:getUdpPtpPacket()
 		    local pkt = buf:getUdpPacket()
 		    pkt:fill {
 		        ethSrc = txQueue,
 		        ethDst = rxQueue,
-		        udpDst = 319
+			udpDst = 319
 		    }
-		    for i = 22, 22 + number-1 do
-			    pkt.payload.uint16[i] = i
+		    pkt.payload.uint8[5] = 1
+		    for i = 5, 5 + number-1 do
+			    ptp.payload.uint16[i] = i + 1
 			end
 		end)
 		hist:update(lat)
@@ -98,4 +100,3 @@ function loadSlave(queue, rxDev, file, run_time)
 	rxCtr:finalize()
 	mg.stop()
 end
-

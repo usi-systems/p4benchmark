@@ -66,12 +66,12 @@ function timestamper(txQueue, rxQueue, test_time, number, size)
             end
         end)
         hist:update(lat)
-        hist:save("histogram.csv")
 
     end
     hist:print()
     if hist.numSamples == 0 then
         log:error("Received no packets.")
     end
+    hist:save("histogram.csv")
     print()
 end

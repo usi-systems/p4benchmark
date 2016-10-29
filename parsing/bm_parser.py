@@ -121,7 +121,7 @@ def parser_complexity(depth, fanout):
 
     return True
 
-def add_headers_and_parsers(nb_headers, nb_fields, do_checksum=True):
+def add_headers_and_parsers(nb_headers, nb_fields, do_checksum=False):
     """
     This method adds Ethernet, IPv4, TCP, UDP, and a number of generic headers
     which follow the UDP header. The UDP destination port 0x9091 is used to
@@ -134,10 +134,13 @@ def add_headers_and_parsers(nb_headers, nb_fields, do_checksum=True):
     :returns: str -- the header and parser definition
 
     """
-    program = p4_define() + ethernet() + ipv4(do_checksum) + tcp()
-    program += udp(select_case(319, 'parse_ptp'))
+    program = p4_define() + ethernet_header() + ptp_header() + parser_start()
 
-    program += ptp_header()
+    next_headers = select_case('ETHERTYPE_PTP', 'parse_ptp')
+    next_headers += select_case('default', 'ingress')
+    program += add_parser('ethernet_t', 'ethernet', 'parse_ethernet',
+                            'etherType', next_headers)
+
     ptp_next_states = ''
     if (nb_headers > 0):
         ptp_next_states += select_case(0x1, 'parse_header_0')
@@ -164,7 +167,7 @@ def add_headers_and_parsers(nb_headers, nb_fields, do_checksum=True):
     return program
 
 
-def benchmark_parser_header(nb_headers, nb_fields, do_checksum=True):
+def benchmark_parser_header(nb_headers, nb_fields, do_checksum=False):
     """
     This method generate the P4 program to benchmark the P4 parser
 

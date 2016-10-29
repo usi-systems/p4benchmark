@@ -23,8 +23,8 @@ class PTP(Packet):
         XBitField('originTimestamp', 0x000045B111510472F9C1, 80)
     ]
 
-bind_layers(UDP, PTP, dport=319)
-bind_layers(UDP, PTP, dport=320)
+# bind_layers(UDP, PTP, dport=319)
+bind_layers(Ether, PTP, type=0x88F7)
 
 
 def add_eth_ip_udp_headers(dport):
@@ -66,10 +66,8 @@ def add_padding(pkt, packet_size):
     return pkt
 
 def get_parser_header_pcap(nb_fields, nb_headers, udp_dest_port, out_dir, packet_size=256):
-    pkt = add_eth_ip_udp_headers(319)
-    pkt /= PTP()
+    pkt = Ether(src='0C:C4:7A:A3:25:34', dst='0C:C4:7A:A3:25:35') / PTP()
     pkt /= add_layers(nb_fields, nb_headers)
-
     pkt = add_padding(pkt, packet_size)
     wrpcap('%s/test.pcap' % out_dir, pkt)
 
@@ -95,7 +93,7 @@ def get_read_state_pcap(udp_dest_port, out_dir, packet_size=256):
     pkt /= MemTest(op=2, index=0)
 
     pkt = add_padding(pkt, packet_size)
-    wrpcap('%s/test.pcap' % out_dir, pkts)
+    wrpcap('%s/test.pcap' % out_dir, pkt)
 
 def get_write_state_pcap(udp_dest_port, out_dir, packet_size=256):
 

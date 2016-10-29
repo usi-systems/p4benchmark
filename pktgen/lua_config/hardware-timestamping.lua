@@ -10,6 +10,7 @@ local log    = require "log"
 local stats	 = require "stats"
 local pcap	 = require "pcap"
 
+local PKT_SIZE = 192
 
 function configure(parser)
 	parser:description("Demonstrate and test hardware timestamping capabilities.\n")
@@ -19,6 +20,7 @@ function configure(parser)
 	parser:option("-r --rate", "Sending rate"):default(1000):convert(tonumber):target("rate")
 	parser:option("-t --time", "Set running duration"):default(30):convert(tonumber):target("time")
 	parser:option("-n --number", "Number of headers"):default(2):convert(tonumber):target("number")
+	parser:option("-s --size", "Header size"):default(8):convert(tonumber):target("size")
 	local args = parser:parse()
 	return args
 end
@@ -37,66 +39,37 @@ function master(args)
 	if args.file then
 		mg.startTask("loadSlave", txQueue0, rxDev, args.file, args.time)
 	else
-		mg.startTask("timestamper", txQueue1, rxQueue1, 319, args.time, args.number)
+		mg.startTask("timestamper", txQueue1, rxQueue1, args.time, args.number, args.size)
 	end
 
 	mg.waitForTasks()
 end
 
-
-function timestamper(txQueue, rxQueue, udp, run_time, number)
-	local filter = rxQueue.qid ~= 0
-	log:info("Testing timestamping %s %s rx filtering for %d seconds.",
-		udp and "UDP packets to port " .. udp or "L2 PTP packets",
-		filter and "with" or "without",
-		run_time
-	)
-	local runtime = timer:new(run_time)
-	local timestamper = ts:newUdpTimestamper(txQueue, rxQueue)
-	local hist = hist:new()
-	mg.sleepMillis(1000) -- ensure that the load task is running
-	while mg.running() and runtime:running() do
-		local lat = timestamper:measureLatency(256, function(buf)
-		    local ptp = buf:getUdpPtpPacket()
-		    local pkt = buf:getUdpPacket()
-		    pkt:fill {
-		        ethSrc = txQueue,
-		        ethDst = rxQueue,
-			udpDst = 319
-		    }
-		    pkt.payload.uint8[5] = 1
-		    for i = 5, 5 + number-1 do
-			    ptp.payload.uint16[i] = i + 1
-			end
-		end)
-		hist:update(lat)
-	end
-	hist:print()
-	if hist.numSamples == 0 then
-		log:error("Received no packets.")
-	end
-	print()
-	hist:save("histogram.csv")
-end
-
-function loadSlave(queue, rxDev, file, run_time)
-	local mempool = memory:createMemPool()
-	local bufs = mempool:bufArray()
-	local pcapFile = pcap:newReader(file)
-	local txCtr = stats:newDevTxCounter(queue, "plain")
-	local rxCtr = stats:newDevRxCounter(rxDev, "plain")
-	local runtime = timer:new(run_time)
-	while runtime:running() and mg.running() do
-		local n = pcapFile:read(bufs)
-		if n == 0 then
-			pcapFile:reset()
-		end
-		queue:sendN(bufs, n)
-		txCtr:update()
-		rxCtr:update()
-	end
-	mg.sleepMillis(1000)
-	txCtr:finalize()
-	rxCtr:finalize()
-	mg.stop()
+function timestamper(txQueue, rxQueue, test_time, number, size)
+    local filter = rxQueue.qid ~= 0
+    log:info("Testing timestamping %s %s rx filtering for %d seconds.",
+        "L2 PTP packets",
+        filter and "with" or "without",
+        test_time
+    )
+    local runtime = timer:new(test_time)
+    local hist = hist:new()
+    local timestamper = ts:newTimestamper(txQueue, rxQueue)
+    while mg.running() and runtime:running() do
+        local lat = timestamper:measureLatency(PKT_SIZE, function(buf)
+            local eth = buf:getEthPacket()
+            local ptp = buf:getPtpPacket()
+            -- mark reserved field for padding
+            eth.payload.uint8[5] = 1
+            for i = 0, 0 + number-1 do
+                ptp.payload.uint8[i*size + 10] = i + 1
+            end
+        end)
+        hist:update(lat)
+    end
+    hist:print()
+    if hist.numSamples == 0 then
+        log:error("Received no packets.")
+    end
+    print()
 end

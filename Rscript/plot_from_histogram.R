@@ -1,17 +1,17 @@
 #!/usr/bin/Rscript
 
 # library(reshape2)
-# library(scales)
 # library(Rmisc)
 library(plyr)
 library(tools)
 library(parallel)
 library(ggplot2)
+library(scales)
 
 get_latency <- function(input) {
     rate <- basename(dirname(input))
     run_nth <- basename(dirname(dirname(input)))
-    variable <- basename(dirname(dirname(dirname(input))))
+    variable <- as.numeric(basename(dirname(dirname(dirname(input)))))
     df <- read.csv(input, col.names=c('latency', 'count'), colClasses=c('numeric', 'numeric'))
 
     latency <- rep(df$latency, df$count)
@@ -35,8 +35,6 @@ my_theme <- function() {
 
 
 plot_latency <- function(df) {
-    df$mean <- df$mean / 1000
-    df$sd <- df$sd / 1000
     pdf('set_field_latency_mean.pdf')
     ggplot(df, aes(x=variable, y=mean)) +
     geom_bar(position=position_dodge(), stat="identity") +
@@ -45,13 +43,11 @@ plot_latency <- function(df) {
                   position=position_dodge(.9)) +
     theme_bw() +
     my_theme() +
-    labs(x="Number of Set-Field Actions", y="Latency (\U00B5s) ")+
-    scale_x_discrete(limits=c('1', '2', '4', '8', '16', '32', '64'))
+    labs(x="Number of Header", y="Latency (\U00B5s) ")+
+    scale_x_discrete(limits=c('1', '2', '4', '8', '16'))
 }
 
 plot_latency_99 <- function(df) {
-    df$mean_99th <- df$mean_99th / 1000
-    df$sd <- df$sd / 1000
     pdf('set_field_latency_mean_99.pdf')
     ggplot(df, aes(x=variable, y=mean_99th)) +
     geom_bar(position=position_dodge(), stat="identity") +
@@ -60,9 +56,41 @@ plot_latency_99 <- function(df) {
                   position=position_dodge(.9)) +
     theme_bw() +
     my_theme() +
-    labs(x="Number of Set-Field Actions", y="Latency (\U00B5s) ")+
-    scale_x_discrete(limits=c('1', '2', '4', '8', '16', '32', '64'))
+    labs(x="Number of Header", y="Latency (\U00B5s) ")+
+    scale_x_discrete(limits=c('1', '2', '4', '8', '16'))
 }
+
+plot_latency_99 <- function(df) {
+    pdf('parse_header.pdf')
+    ggplot(df, aes(x=variable, y=mean_99th)) +
+    geom_bar(position=position_dodge(), stat="identity") +
+    geom_errorbar(aes(ymin=mean_99th-sd, ymax=mean_99th+sd),
+                  width=.2,                    # Width of the error bars
+                  position=position_dodge(.9)) +
+    theme_bw() +
+    my_theme() +
+    labs(x="Number of Header", y="Latency (\U00B5s) ")+
+    scale_x_discrete(limits=c('1', '2', '4', '8', '16'))
+}
+
+plot_lines_graph <- function(df) {
+    pdf('pisces_parse_header.pdf')
+    ggplot(df, aes(x=variable, y=mean_99th, colour=rate)) +
+    geom_line(size=1) +
+    # geom_point(size=3, fill="white") +
+    theme_bw() +
+    my_theme() +
+    scale_colour_hue(l=30) +
+    # scale_linetype_discrete(name="Header Modification") +
+    labs(x="Number of Headers", y="Latency (ns) ") +
+    # theme(legend.position = c(.4, .85), legend.key.size = unit(2, "lines")) +
+    theme(legend.position = "none") +
+    # scale_color_grey(name="Header Modification") +
+    scale_y_continuous(labels=comma)
+    # scale_x_continuous(labels=comma)
+    # scale_x_discrete(limits=c('1', '2', '4', '8', '16'))
+}
+
 
 args <- commandArgs(trailingOnly = TRUE)
 dirs = list.dirs(args[1])
@@ -89,5 +117,6 @@ for (i in (dfs)) {
 result <- ddply(df, c('variable', 'rate'), summarise, mean=mean(mean_lat), sd=sd(sd_lat), mean_95th=mean(q95th), mean_99th=mean(q99th))
 
 print(result)
-plot_latency(result)
-plot_latency_99(result)
+# plot_latency(result)
+# plot_latency_99(result)
+plot_lines_graph(result)

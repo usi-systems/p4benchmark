@@ -95,6 +95,12 @@ def copy_histogram(host, moongen_path, output_dir):
     ssh = subprocess.Popen(shlex.split(cmd), shell=False)
     ssh.wait()
 
+def rm_histogram(host):
+    cmd = "ssh {0} 'rm histogram.csv'".format(host)
+    print cmd
+    ssh = subprocess.Popen(shlex.split(cmd), shell=False)
+    ssh.wait()
+
 
 def stop_pisces(host, path):
     cmd = "ssh {0} 'python {1}/pisces/P4vSwitch.py -k'".format(host, path)
@@ -117,6 +123,7 @@ def run_N_experiments(path, moongen_path, variable_path, metric, variable, N=1):
         moongen = run_moongen('node98', path, moongen_path, output_path, metric, variable, rate)
         moongen.wait()
         copy_histogram('node98', moongen_path, output_path)
+        rm_histogram('node98')
 
         dump_flows('node97', output_path)
         stop_pisces('node97', path)

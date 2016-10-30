@@ -9,8 +9,8 @@ from p4gen.p4template import *
 def generate_pisces_command(nb_headers, out_dir):
     rules = add_pisces_forwarding_rule()
     actions = ''
+    match = 'udp_dstPort=0x9091'
     for i in range(nb_headers-1):
-        match = 'udp_dstPort=0x9091'
         actions += 'set_field:1->header_{0}_field_0,'.format(i)
     actions += 'set_field:0x9091->udp_dstPort,deparse,output:NXM_NX_REG0[]'
     rules += add_openflow_rule(1, 32768, match, actions)

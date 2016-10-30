@@ -7,7 +7,7 @@ from threading import Timer
 import time
 
 
-features = ['parse-header', 'set-field', 'modify', 'processing']
+features = ['parse-header', 'parse-field', 'set-field', 'modify', 'processing']
 
 def copy_p4_program(host, input_program):
     cmd = "scp {0} {1}:temp/output/main.p4".format(input_program, host)
@@ -23,11 +23,13 @@ def gen_p4_program(host, feature, path, variable, output_dir, checksum, num_fiel
         cmd += " python {0}/generate_p4_program.py".format(path)
     if feature == features[0]:
         cmd += " --parser-header --headers {0} --fields {1}'".format(variable, num_fields)
-    elif feature == features[1]:
-        cmd += " --action-complexity --nb-operation {0}'".format(variable)
+    if feature == features[1]:
+        cmd += " --parser-field --fields {0}'".format(variable)
     elif feature == features[2]:
-        cmd += " --mod-packet --mod-type add --headers {0}'".format(variable)
+        cmd += " --action-complexity --nb-operation {0}'".format(variable)
     elif feature == features[3]:
+        cmd += " --mod-packet --mod-type add --headers {0}'".format(variable)
+    elif feature == features[4]:
         cmd += " --pipeline --tables {0}'".format(variable)
     else:
         print "{0} is not a valid benchmarking feature".format(feature)

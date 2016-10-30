@@ -2,7 +2,9 @@
 
 import argparse
 
-from parsing.bm_parser import benchmark_parser_header, benchmark_parser_with_header_field
+from parsing.bm_parser import benchmark_parser_header
+from parsing.bm_parser import benchmark_parser_with_header_field
+from parsing.bm_parser import parser_complexity
 from processing.bm_pipeline import benchmark_pipeline
 from state_access.bm_memory import benchmark_memory
 from packet_modification.bm_modification import benchmark_modification
@@ -15,6 +17,8 @@ def main():
                             help='parser header benchmark')
     parser.add_argument('--parser-field', default=False, action='store_true',
                             help='parser field benchmark')
+    parser.add_argument('--parser-complex', default=False, action='store_true',
+                            help='parser complexity benchmark')
     parser.add_argument('--pipeline', default=False, action='store_true',
                             help='pipeline benchmark')
     parser.add_argument('--memory', default=False, action='store_true',
@@ -37,6 +41,10 @@ def main():
                             help='the bit width of a register element')
     parser.add_argument('--nb-operations', default=1, type=int,
                             help='the number of state access operations')
+    parser.add_argument('--depth', default=1, type=int,
+                            help='the depth of the parse graph')
+    parser.add_argument('--fanout', default=2, type=int,
+                            help='the number of branch of a node in the parse graph')
     parser.add_argument('--operations-op', choices=['w', 'r'], default='w',
                             help='operation is Write op')
     parser.add_argument('--mod-type', default='add', type=str,
@@ -48,6 +56,8 @@ def main():
         benchmark_parser_header(args.headers, args.fields, do_checksum=args.checksum)
     if args.parser_field:
         benchmark_parser_with_header_field(args.fields, do_checksum=args.checksum)
+    if args.parser_complex:
+        parser_complexity(args.depth, args.fanout)
     elif args.pipeline:
         benchmark_pipeline(args.tables, args.table_size)
     elif args.mod_packet:

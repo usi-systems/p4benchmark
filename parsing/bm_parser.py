@@ -101,12 +101,19 @@ def parser_complexity(depth, fanout):
     :returns: str -- the header and parser definition
 
     """
-    program = p4_define() + ethernet() + ipv4() + tcp()
-    udp_next_states = ''
-    for i in range(fanout):
-        udp_next_states += select_case(0x9091 + i, 'parse_header_%d' % i)
+    program = p4_define() + ethernet_header() + ptp_header() + parser_start()
 
-    program += udp(udp_next_states)
+    next_headers = select_case('ETHERTYPE_PTP', 'parse_ptp')
+    next_headers += select_case('default', 'ingress')
+    program += add_parser('ethernet_t', 'ethernet', 'parse_ethernet',
+                            'etherType', next_headers)
+
+    ptp_next_states = ''
+    for i in range(fanout):
+        ptp_next_states += select_case(i+1, 'parse_header_%d' % i)
+    ptp_next_states += select_case('default', 'ingress')
+    program += add_parser('ptp_t', 'ptp', 'parse_ptp',
+                            'reserved2', ptp_next_states)
 
     root = ParseNode()
     loop_rec(root, depth, fanout)
@@ -117,7 +124,7 @@ def parser_complexity(depth, fanout):
        os.makedirs(output_dir)
     program = add_forwarding_table(output_dir, program)
     write_output(output_dir, program)
-    get_parser_header_pcap(depth+1, 1, 0x9091, output_dir)
+    get_parser_header_pcap(depth+1, 1, output_dir)
 
     return True
 
@@ -184,12 +191,12 @@ def benchmark_parser_header(nb_headers, nb_fields, do_checksum=False):
     program  = add_headers_and_parsers(nb_headers, nb_fields, do_checksum)
     program = add_forwarding_table(output_dir, program)
     write_output(output_dir, program)
-    get_parser_header_pcap(nb_fields, nb_headers, 0x9091, output_dir)
+    get_parser_header_pcap(nb_fields, nb_headers, output_dir)
     generate_pisces_command(output_dir, do_checksum)
 
     return True
 
-def benchmark_parser_with_header_field(nb_fields, do_checksum=True):
+def benchmark_parser_with_header_field(nb_fields, do_checksum=False):
     """
     This method generate the P4 program to benchmark the P4 parser
 
@@ -204,7 +211,7 @@ def benchmark_parser_with_header_field(nb_fields, do_checksum=True):
     program  = add_headers_and_parsers(1, nb_fields, do_checksum)
     program = add_forwarding_table(output_dir, program)
     write_output(output_dir, program)
-    get_parser_field_pcap(nb_fields, 0x9091, output_dir)
+    get_parser_field_pcap(nb_fields, output_dir)
     generate_pisces_command(output_dir)
 
     return True

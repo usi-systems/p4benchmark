@@ -61,21 +61,19 @@ def add_padding(pkt, packet_size):
     if pad_len < 0:
         print "Packet size [%d] is greater than expected %d" % (len(pkt), packet_size)
     else:
-        pad = Padding('\x00'*pad_len)
+        pad = '\x00' * pad_len
         pkt = pkt/pad
     return pkt
 
-def get_parser_header_pcap(nb_fields, nb_headers, udp_dest_port, out_dir, packet_size=256):
+def get_parser_header_pcap(nb_fields, nb_headers, out_dir, packet_size=256):
     pkt = Ether(src='0C:C4:7A:A3:25:34', dst='0C:C4:7A:A3:25:35') / PTP()
     pkt /= add_layers(nb_fields, nb_headers)
     pkt = add_padding(pkt, packet_size)
     wrpcap('%s/test.pcap' % out_dir, pkt)
 
-def get_parser_field_pcap(nb_fields, udp_dest_port, out_dir, packet_size=256):
-    pkt = add_eth_ip_udp_headers(319)
-    pkt /= PTP()
+def get_parser_field_pcap(nb_fields, out_dir, packet_size=256):
+    pkt = Ether(src='0C:C4:7A:A3:25:34', dst='0C:C4:7A:A3:25:35') / PTP()
     pkt /= vary_header_field(nb_fields)
-
     pkt = add_padding(pkt, packet_size)
     wrpcap('%s/test.pcap' % out_dir, pkt)
 
@@ -121,7 +119,11 @@ def get_pipeline_pcap(out_dir, packet_size=256):
 def get_packetmod_pcap(nb_headers, nb_fields, mod_type, out_dir, packet_size=256):
     pkt = Packet()
     if mod_type == 'add':
-        pkt = add_eth_ip_udp_headers(15432)
+        eth = Ether(src='0C:C4:7A:A3:25:34', dst='0C:C4:7A:A3:25:35')
+        ip  = IP(dst='10.0.0.2', ttl=64)
+        udp = UDP(sport=65231, dport=0x9091)
+        payload = '\x00' * 22
+        pkt = eth / ip / udp / payload
     elif mod_type == 'rm':
         pkt = add_eth_ip_udp_headers(0x9091)
         pkt /= add_layers(nb_fields, nb_headers)

@@ -21,6 +21,13 @@ class BenchmarkMemory(P4Benchmark):
         if not os.path.exists(self.directory):
             os.makedirs(self.directory)
 
+    def start(self):
+        # run switch
+        self.run_behavioral_switch()
+        # run packet generator
+        self.measure_latency()
+        # stop the switch
+        self.tearDown()
 
     def compile_p4_program(self):
         ret = benchmark_memory(self.nb_registers, self.element_size, self.nb_elements, 1)
@@ -44,16 +51,10 @@ def main():
     args = parser.parse_args()
 
     for nb_registers in [1, 2, 4, 8, 16]:
-        offer_load = 100000
+        offer_load = 1
         p = BenchmarkMemory(nb_registers, args.element_size, args.nb_elements, offer_load)
-        # compile
         p.compile_p4_program()
         p.start()
-        while (p.has_lost_packet() != True):
-            offer_load += 100000
-            p = BenchmarkMemory(nb_registers, args.element_size, args.nb_elements, offer_load)
-            p.start()
-    p.run_analyser()
 
 if __name__=='__main__':
     main()

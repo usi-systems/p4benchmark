@@ -17,6 +17,7 @@ class P4Benchmark(object):
         self.switch_path = os.path.join(bmv2, 'targets/simple_switch/simple_switch')
         self.cli_path = os.path.join(bmv2, 'tools/runtime_CLI.py')
         self.pktgen = os.path.join(p4bench, 'pktgen/build/p4benchmark')
+        self.sendb2b = os.path.join(p4bench, 'pktgen/build/sendb2b')
         self.analyse = os.path.join(p4bench, 'benchmark/analyse.R')
         self.nb_packets = 100000
         self.log_level = ''
@@ -115,3 +116,20 @@ class P4Benchmark(object):
         p.wait()
         out.close()
         err.close()
+
+    def measure_latency(self):
+        cmd = 'sudo {0} -p {1} -s veth2 -i veth4 -c {2} '.format(
+            self.sendb2b,
+            'output/test.pcap',
+            self.nb_packets)
+        print cmd
+        args = shlex.split(cmd)
+        out_file = '{0}/latency.csv'.format(self.directory)
+        err_file = '{0}/loss.csv'.format(self.directory)
+        out = open(out_file, 'w+')
+        err = open(err_file, 'w+')
+        p = Popen(args, stdout=out, stderr=err)
+        p.wait()
+        out.close()
+        err.close()
+

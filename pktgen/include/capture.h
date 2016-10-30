@@ -28,4 +28,7 @@ capture(char *dev, char* filter_exp);
 pcap_t*
 init_dev(struct bpf_program *fp, char *dev, char* filter_exp);
 
+pcap_t*
+init_dev_bufsize(struct bpf_program *fp, char *dev, char* filter_exp, int snaplen, int read_timeout);
+
 #endif

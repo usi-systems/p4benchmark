@@ -279,6 +279,55 @@ init_dev(struct bpf_program *fp, char *dev, char* filter_exp)
 }
 
 /*
+ * Initialize a device and return a pcap handler
+ */
+pcap_t*
+init_dev_bufsize(struct bpf_program *fp, char *dev, char* filter_exp, int snaplen, int read_timeout)
+{
+    pcap_t *handle;
+    char errbuf[PCAP_ERRBUF_SIZE];  /* error buffer */
+    bpf_u_int32 mask;               /* subnet mask */
+    bpf_u_int32 net;                /* ip */
+
+    /* get network number and mask associated with capture device */
+    if (pcap_lookupnet(dev, &net, &mask, errbuf) == -1) {
+        fprintf(stderr, "Couldn't get netmask for device %s: %s\n",
+            dev, errbuf);
+        net = 0;
+        mask = 0;
+    }
+
+    /* open capture device */
+    handle = pcap_open_live(dev, snaplen, 1, read_timeout, errbuf);
+    if (handle == NULL) {
+        fprintf(stderr, "Couldn't open device %s: %s\n", dev, errbuf);
+        exit(EXIT_FAILURE);
+    }
+
+    /* make sure we're capturing on an Ethernet device [2] */
+    if (pcap_datalink(handle) != DLT_EN10MB) {
+        fprintf(stderr, "%s is not an Ethernet\n", dev);
+        exit(EXIT_FAILURE);
+    }
+
+    /* compile the filter expression */
+    if (pcap_compile(handle, fp, filter_exp, 0, net) == -1) {
+        fprintf(stderr, "Couldn't parse filter %s: %s\n",
+            filter_exp, pcap_geterr(handle));
+        exit(EXIT_FAILURE);
+    }
+
+    /* apply the compiled filter */
+    if (pcap_setfilter(handle, fp) == -1) {
+        fprintf(stderr, "Couldn't install filter %s: %s\n",
+            filter_exp, pcap_geterr(handle));
+        exit(EXIT_FAILURE);
+    }
+
+    return handle;
+}
+
+/*
  * Start capture on dev
  */
 int capture(char *dev, char* filter_exp)

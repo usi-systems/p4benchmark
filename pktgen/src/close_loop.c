@@ -69,7 +69,7 @@ static struct {
 
 struct app {
     int count;
-    pthread_mutex_t mutex_stat;
+    // pthread_mutex_t mutex_stat;
     struct pcap_pkthdr header;
     pcap_t* sniff;
     pcap_t* out;
@@ -140,25 +140,25 @@ void parse_args(int argc, char **argv)
         config.output_fn = strdup("stat.csv");
 }
 
-// void average_latency(struct app* ctx)
-// {
+void average_latency(struct app* ctx)
+{
 
-//     if (stat.nb_packets <= 0) {
-//         if (idle_timeout-- > 0)
-//             return;
-//         /* quite after three attempts */
-//         force_quit = 1;
-//         return;
-//     }
-//     pthread_mutex_lock(&ctx->mutex_stat);
-//     float avg_us = (float) stat.latency / stat.nb_packets;
-//     fprintf(ctx->fp, "%-8lu %-6.3f\n", stat.nb_packets, avg_us);
-//     stat.total_packets += stat.nb_packets;
-//     /* reset counter */
-//     stat.nb_packets = 0;
-//     stat.latency = 0;
-//     pthread_mutex_unlock(&ctx->mutex_stat);
-// }
+    if (stat.nb_packets <= 0) {
+        if (idle_timeout-- > 0)
+            return;
+        /* quite after three attempts */
+        force_quit = 1;
+        return;
+    }
+    // pthread_mutex_lock(&ctx->mutex_stat);
+    float avg_us = (float) stat.latency / stat.nb_packets;
+    fprintf(ctx->fp, "%lu,%f\n", stat.nb_packets, avg_us);
+    stat.total_packets += stat.nb_packets;
+    /* reset counter */
+    stat.nb_packets = 0;
+    stat.latency = 0;
+    // pthread_mutex_unlock(&ctx->mutex_stat);
+}
 
 void
 send_packet(struct app* app_ctx) {
@@ -179,14 +179,13 @@ process_pkt(u_char *arg, const struct pcap_pkthdr *header, const u_char *packet)
     struct timeval* tv = (struct timeval*)(packet + tv_offset);
     static struct timeval res;
     timersub(&header->ts, tv, &res);
-    printf("%d.%06d\n", (int) res.tv_sec, (int) res.tv_usec);
-
-    send_packet(app_ctx);
+    fprintf(stdout, "%d.%06d\n", (int) res.tv_sec, (int) res.tv_usec);
 
     // pthread_mutex_lock(&app_ctx->mutex_stat);
     stat.latency += US_PER_S * res.tv_sec + res.tv_usec;
     stat.total_packets++;
     // pthread_mutex_unlock(&app_ctx->mutex_stat);
+    send_packet(app_ctx);
 }
 
 void final_report(int total_sent)
@@ -199,6 +198,7 @@ void final_report(int total_sent)
 void* sniff(void *arg)
 {
     struct app* app_ctx = (struct app*) arg;
+    send_packet(app_ctx);
     int ret;
     /* now we can set our callback function */
     ret = pcap_loop(app_ctx->sniff, app_ctx->count, process_pkt,
@@ -212,23 +212,25 @@ void* sniff(void *arg)
 
 void signal_handler(int signum)
 {
-    if (signum == SIGINT || signum == SIGTERM) {
+    if (signum == SIGINT) {
         printf("\n\nSignal %d received, preparing to exit...\n", signum);
         force_quit = 1;
     }
 }
 
-// void* report_stat(void *arg)
-// {
-//     struct app* ctx = (struct app *)arg;
-//     while(!force_quit) {
-//         sleep(1);
-//         average_latency(ctx);
-//     }
-//     pcap_breakloop(ctx->sniff);
+void* report_stat(void *arg)
+{
+    struct app* ctx = (struct app *)arg;
+    while(!force_quit) {
+        average_latency(ctx);
+        sleep(1);
+    }
+    pcap_breakloop(ctx->sniff);
+    if (ctx->out)
+        pcap_breakloop(ctx->out);
 
-//     return NULL;
-// }
+    return NULL;
+}
 
 int count_packets(char *path_to_trace)
 {
@@ -258,9 +260,16 @@ int main(int argc, char* argv[])
     app_ctx.count = config.count * count_packets(config.pcap_file);
 
     pcap_t *input_packets = read_pcap(config.pcap_file);
+    /* Now just loop through extracting packets as long as we have
+     * some to read.
+     */
+    app_ctx.packet = pcap_next(input_packets, &app_ctx.header);
+    fprintf(stderr, "packet-size %d\n", app_ctx.header.caplen);
+
+    int bufsize = app_ctx.header.caplen + sizeof(struct timeval);
 
     struct bpf_program fp;
-    app_ctx.sniff = init_dev(&fp, config.interface, config.filter_exp);
+    app_ctx.sniff = init_dev_bufsize(&fp, config.interface, config.filter_exp, bufsize, 0.001);
 
 
     #ifdef WRITE_TO_FILE
@@ -276,12 +285,12 @@ int main(int argc, char* argv[])
 
     if (config.send_interface != NULL) {
         struct bpf_program send_fp;
-        app_ctx.out = init_dev(&send_fp, config.send_interface, NULL);
+        app_ctx.out = init_dev_bufsize(&send_fp, config.send_interface, NULL, bufsize, 0.001);
     } else {
         app_ctx.out = app_ctx.sniff;
     }
 
-    pthread_mutex_init(&app_ctx.mutex_stat, NULL);
+    // pthread_mutex_init(&app_ctx.mutex_stat, NULL);
 
     // if (pthread_create(&sniff_thread, NULL, sniff, &app_ctx) < 0) {
     //     fprintf(stderr, "Error creating sniff thread\n");
@@ -292,15 +301,6 @@ int main(int argc, char* argv[])
     //     fprintf(stderr, "Error creating report thread\n");
     //     exit(EXIT_FAILURE);
     // }
-
-    /* Now just loop through extracting packets as long as we have
-     * some to read.
-     */
-
-    app_ctx.packet = pcap_next(input_packets, &app_ctx.header);
-    fprintf(stderr, "packet-size %d\n", app_ctx.header.caplen);
-    send_packet(&app_ctx);
-
     sniff(&app_ctx);
 
     while(!force_quit) {
@@ -333,8 +333,8 @@ int main(int argc, char* argv[])
     #ifdef WRITE_TO_FILE
         fclose(app_ctx.fp);
     #endif
-    pthread_mutex_destroy(&app_ctx.mutex_stat);
-    pthread_exit(NULL);
+    // pthread_mutex_destroy(&app_ctx.mutex_stat);
+    // pthread_exit(NULL);
 
     return 0;
 }

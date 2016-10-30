@@ -2,10 +2,11 @@
 
 Tool to benchmark P4 Compilers and Targets
 
-## Install Dependencies
+## Installation
 
 ```
-sudo ./setup.sh
+pip install -r requirements.txt
+python setup.py install
 ```
 
 ## Generate P4 Program and PCAP file for testing

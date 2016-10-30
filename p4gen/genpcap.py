@@ -120,16 +120,19 @@ def get_packetmod_pcap(nb_headers, nb_fields, mod_type, out_dir, packet_size=256
     pkt = Packet()
     if mod_type == 'add':
         eth = Ether(src='0C:C4:7A:A3:25:34', dst='0C:C4:7A:A3:25:35')
-        ip  = IP(dst='10.0.0.2', ttl=64)
-        udp = UDP(sport=65231, dport=0x9091)
-        payload = '\x00' * 22
-        pkt = eth / ip / udp / payload
+        ptp = PTP(reserved2=0)
+        pkt = eth / ptp / '0x0' * 6
     elif mod_type == 'rm':
-        pkt = add_eth_ip_udp_headers(0x9091)
+        eth = Ether(src='0C:C4:7A:A3:25:34', dst='0C:C4:7A:A3:25:35')
+        ptp = PTP(reserved2=1)
+        pkt = eth / ptp
         pkt /= add_layers(nb_fields, nb_headers)
         pkt = add_padding(pkt, packet_size)
     elif mod_type == 'mod':
-        pkt = add_eth_ip_udp_headers(320)
+        eth = Ether(src='0C:C4:7A:A3:25:34', dst='0C:C4:7A:A3:25:35')
+        ptp = PTP(reserved2=1)
+        pkt = eth / ptp
+        pkt /= add_layers(nb_fields, nb_headers)
         pkt = add_padding(pkt, packet_size)
 
     wrpcap('%s/test.pcap' % out_dir, pkt)

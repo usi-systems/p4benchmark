@@ -1,4 +1,10 @@
-#!/usr/bin/Rscript
+#!/usr/bin/env Rscript
+
+list.of.packages <- c("ggplot2", "tools", "reshape2", "scales", "Rmisc", "plyr")
+new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
+if(length(new.packages))
+    install.packages(new.packages, repos = "http://cran.us.r-project.org",
+                        dependencies = TRUE)
 
 # library(reshape2)
 # library(Rmisc)
@@ -8,19 +14,8 @@ library(parallel)
 library(ggplot2)
 library(scales)
 
-get_latency <- function(input) {
-    rate <- basename(dirname(input))
-    run_nth <- basename(dirname(dirname(input)))
-    variable <- as.numeric(basename(dirname(dirname(dirname(input)))))
-    df <- read.csv(input, col.names=c('latency', 'count'), colClasses=c('numeric', 'numeric'))
-
-    latency <- rep(df$latency, df$count)
-    q <- quantile(latency, c(.95, .99))
-    mean <- mean(latency)
-    sd <- sd(latency)
-    df = data.frame(run_nth=run_nth, variable=variable, rate=rate, mean_lat=mean, sd_lat=sd, q95th=q[[1]], q99th=q[[2]])
-    return (df)
-}
+# import aggregate_latency function
+source("extract_histogram.R")
 
 my_theme <- function() {
     theme(panel.grid.major.x = element_blank(),
@@ -74,9 +69,12 @@ plot_latency_99 <- function(df) {
 }
 
 plot_lines_graph <- function(df) {
-    pdf('pisces_parse_header.pdf')
-    ggplot(df, aes(x=variable, y=mean_99th, colour=rate)) +
-    geom_line(size=1) +
+    pdf('output.pdf')
+    ymax = max(df$mean_99th)
+    ggplot(df, aes(x=variable)) +
+    geom_line(aes(y=mean), size=1) +
+    geom_line(aes(y=mean_95th), size=1) +
+    geom_line(aes(y=mean_99th), size=1) +
     # geom_point(size=3, fill="white") +
     theme_bw() +
     my_theme() +
@@ -86,7 +84,7 @@ plot_lines_graph <- function(df) {
     # theme(legend.position = c(.4, .85), legend.key.size = unit(2, "lines")) +
     theme(legend.position = "none") +
     # scale_color_grey(name="Header Modification") +
-    scale_y_continuous(labels=comma)
+    scale_y_continuous(labels=comma, limits=c(1000, ymax))
     # scale_x_continuous(labels=comma)
     # scale_x_discrete(limits=c('1', '2', '4', '8', '16'))
 }
@@ -95,28 +93,15 @@ plot_lines_graph <- function(df) {
 args <- commandArgs(trailingOnly = TRUE)
 dirs = list.dirs(args[1])
 
-# Initial a vector
-histogram_files <- vector()
+df <- aggregate_latency(dirs)
 
-for (d in dirs) {
-    histogram_path = list.files(d, pattern='histogram.csv', full.names=TRUE)
-    if ((length(histogram_path) != 0)) {
-        histogram_files <- append(histogram_files, histogram_path)
-    }
-}
-
-
-no_cores <- detectCores() - 1
-
-dfs = mclapply(histogram_files, get_latency, mc.cores=no_cores)
-df <- NULL
-for (i in (dfs)) {
-    df <- rbind(df, i)
-}
-
-result <- ddply(df, c('variable', 'rate'), summarise, mean=mean(mean_lat), sd=sd(sd_lat), mean_95th=mean(q95th), mean_99th=mean(q99th))
+result <- ddply(df, c('variable', 'rate'), summarise, mean=mean(latency),
+        sd=sd(latency), mean_95th=quantile(latency, c(.95)), mean_99th=quantile(latency, c(.99)))
 
 print(result)
 # plot_latency(result)
 # plot_latency_99(result)
 plot_lines_graph(result)
+
+output_csv = paste(basename(args[1]), '.csv', sep='')
+write.table(df, output_csv, sep=',', row.names=F, quote=F)

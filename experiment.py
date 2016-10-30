@@ -3,7 +3,6 @@ import argparse
 import subprocess
 import shlex
 import os, sys
-from threading import Timer
 import time
 
 

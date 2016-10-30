@@ -60,6 +60,7 @@ static struct {
     int   count;
     int   bps;
     int   log_level;
+    int   outstanding;
     char* pcap_file;
     char* interface;
     char* send_interface;
@@ -99,9 +100,10 @@ void parse_args(int argc, char **argv)
     const char *app_name = argv[0];
     config.count = 1;
     config.bps = 1;
+    config.outstanding = 1;
     config.log_level = APP_INFO;
     /* Parse command line */
-    while ((opt = getopt(argc, argv, "c:t:l:i:s:p:f:o:")) != EOF) {
+    while ((opt = getopt(argc, argv, "c:t:l:i:s:p:f:o:n:")) != EOF) {
         switch (opt) {
         case 'c':
             config.count = atoi(optarg);
@@ -114,6 +116,9 @@ void parse_args(int argc, char **argv)
             break;
         case 'i':
             config.interface = strdup(optarg);
+            break;
+        case 'n':
+            config.outstanding = atoi(optarg);
             break;
         case 's':
             config.send_interface = strdup(optarg);
@@ -198,7 +203,6 @@ void final_report(int total_sent)
 void* sniff(void *arg)
 {
     struct app* app_ctx = (struct app*) arg;
-    send_packet(app_ctx);
     int ret;
     /* now we can set our callback function */
     ret = pcap_loop(app_ctx->sniff, app_ctx->count, process_pkt,
@@ -289,6 +293,10 @@ int main(int argc, char* argv[])
     } else {
         app_ctx.out = app_ctx.sniff;
     }
+
+    int i;
+    for (i = 0; i < config.outstanding; i++)
+        send_packet(&app_ctx);
 
     // pthread_mutex_init(&app_ctx.mutex_stat, NULL);
 

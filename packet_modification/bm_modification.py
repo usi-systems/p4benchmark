@@ -6,13 +6,16 @@ from p4gen.genpcap import get_packetmod_pcap
 from p4gen import copy_scripts
 from p4gen.p4template import *
 
-def generate_pisces_command(nb_headers, out_dir):
+def generate_pisces_command(nb_headers, out_dir, mod_type):
     rules = add_pisces_forwarding_rule()
     actions = ''
+    match = 'ptp_reserved2=11'
     for i in range(nb_headers-1):
-        match = 'udp_dstPort=0x9091'
         actions += 'set_field:1->header_{0}_field_0,'.format(i)
-    actions += 'set_field:0x9091->udp_dstPort,deparse,output:NXM_NX_REG0[]'
+    if mod_type == 'rm':
+        actions += 'set_field:0->ptp_reserved2,deparse,output:NXM_NX_REG0[]'
+    else:
+        actions += 'set_field:1->ptp_reserved2,deparse,output:NXM_NX_REG0[]'
     rules += add_openflow_rule(1, 32768, match, actions)
 
     with open ('%s/pisces_rules.txt' % out_dir, 'w') as out:
@@ -29,7 +32,7 @@ def benchmark_add_header_overhead(action_name, nb_header):
 
     # Change udp port to include generic headers in deparser
     # TODO: parameterize the protocol number for the generic header
-    instruction_set += '\tmodify_field(udp.dstPort, 0x9091);'
+    instruction_set += '\tmodify_field(ptp.reserved2, 1);'
     return add_compound_action(action_name, '', instruction_set)
 
 def benchmark_remove_header_overhead(action_name, nb_header):
@@ -38,7 +41,7 @@ def benchmark_remove_header_overhead(action_name, nb_header):
         instruction_set += '\tremove_header(header_%d);\n' % i
 
     # Change udp port to skip generic headers in deparser
-    instruction_set += '\tmodify_field(udp.dstPort, 12345);'
+    instruction_set += '\tmodify_field(ptp.reserved2, 0);'
     return add_compound_action(action_name, '', instruction_set)
 
 def benchmark_modify_header_overhead(action_name, nb_header):
@@ -97,6 +100,6 @@ def benchmark_modification(nb_headers, nb_fields, mod_type):
         out.write(commands)
     copy_scripts(out_dir)
     get_packetmod_pcap(nb_headers, nb_fields, mod_type, out_dir)
-    generate_pisces_command(nb_headers, out_dir)
+    generate_pisces_command(nb_headers, out_dir, mod_type)
 
     return True

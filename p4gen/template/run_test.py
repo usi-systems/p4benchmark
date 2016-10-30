@@ -12,6 +12,28 @@ from scapy.all import sniff, wrpcap, rdpcap
 from scapy.all import Ether, IP, IPv6, TCP, UDP
 from scapy.all import Packet, ShortField, XBitField, bind_layers
 
+class PTP(Packet):
+    """Precision Time Protocol"""
+    name = "PTP protocol"
+    fields_desc = [
+        XBitField('type_', 0x10, 8),
+        XBitField('version', 0x02, 8),
+        ShortField('messageLength', 0x36),
+        XBitField('subdomain', 0x00, 8),
+        ShortField('flags', 0),
+        XBitField('correction', 0x00, 48),
+        XBitField('clockIdentity', 0x008063FFFF0009BA, 64),
+        ShortField('sourcePortID', 1),
+        ShortField('sequenceID', 0x9E48),
+        XBitField('control', 0x05, 8),
+        XBitField('logMessagePeriod', 0x0F, 8),
+        XBitField('originTimestamp', 0x000045B111510472F9C1, 80)
+    ]
+
+bind_layers(UDP, PTP, dport=319)
+bind_layers(UDP, PTP, dport=320)
+
+
 features = {
     0 : 'PARSER',
     1 : 'STATE',

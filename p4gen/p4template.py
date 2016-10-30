@@ -492,3 +492,16 @@ def add_openflow_rule(tbl_id, priority, match, actions):
         'actions' : actions,
     }
     return read_template('template/commands/pisces_commands.txt', binding)
+
+def ptp_header():
+    """
+    This method returns the ptp header definition
+    """
+    return read_template('template/headers/ptp.txt')
+
+def parser_start(next_parser='parse_ethernet'):
+    """
+    This method returns the start of the parser
+    """
+    parser_str = 'parser start { return %s; }\n'  % next_parser
+    return parser_str

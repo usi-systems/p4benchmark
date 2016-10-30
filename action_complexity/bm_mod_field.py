@@ -10,9 +10,8 @@ modifications = {
     1 : 'ipv4.identification',
     2 : 'ipv4.ttl',
     3 : 'ipv4.hdrChecksum',
-    4 : 'ipv4.hdrChecksum',
-    5 : 'udp.srcPort',
-    6 : 'udp.checksum',
+    4 : 'udp.srcPort',
+    5 : 'udp.checksum',
 }
 
 modifications_pisces = {
@@ -20,9 +19,8 @@ modifications_pisces = {
     1 : 'ipv4_identification',
     2 : 'ipv4_ttl',
     3 : 'ipv4_hdrChecksum',
-    4 : 'ipv4_hdrChecksum',
-    5 : 'udp_srcPort',
-    6 : 'udp_checksum',
+    4 : 'udp_srcPort',
+    5 : 'udp_checksum',
 }
 
 def benchmark_modify_header_overhead(action_name, nb_operation):
@@ -41,9 +39,8 @@ def generate_pisces_command(nb_operation, out_dir, checksum=False):
     if checksum:
         ip_checksum = 'calc_fields_update(ipv4_hdrChecksum,csum16,fields:ipv4_version_ihl,ipv4_diffserv,ipv4_totalLen,ipv4_identification,ipv4_flags_fragOffset,ipv4_ttl,ipv4_protocol,ipv4_srcAddr,ipv4_dstAddr),'
         actions += ip_checksum
-        # PISCES doesn't recognized udp_payload
-        # udp_checksum = 'calc_fields_update(udp_checksum,csum16,fields:ipv4_srcAddr,ipv4_dstAddr,ipv4_protocol,udp_length_,udp_srcPort,udp_dstPort,udp_length_),'
-        # actions += udp_checksum
+        udp_checksum = "calc_fields_update(udp_checksum,csum16,fields:ipv4_srcAddr,ipv4_dstAddr,0x8'0,ipv4_protocol,udp_length_,udp_srcPort,udp_dstPort,udp_length_,payload),"
+        actions += udp_checksum
     actions += 'deparse,output:NXM_NX_REG0[]'
     rules += add_openflow_rule(1, 32768, match, actions)
 

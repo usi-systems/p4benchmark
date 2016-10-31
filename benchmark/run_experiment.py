@@ -14,6 +14,7 @@ P4BENCHMARK_ROOT = os.environ.get('P4BENCHMARK_ROOT')
 P4C = os.path.join(P4BENCHMARK_ROOT, 'p4c-bm/p4c_bm/__main__.py')
 
 from packet_modification.bm_modification import benchmark_modification
+from state_access.bm_memory import benchmark_memory
 
 def run_with_load(load=None, count=100000):
     sw = BMV2Switch(json_path='output/main.json', commands_path='output/commands.txt')
@@ -30,6 +31,14 @@ def run_with_load(load=None, count=100000):
 def clean_results(results):
     if len(results) < 4: return results
     return results[2:-1]
+
+def build_p4_prog():
+    prog = 'main'
+    with open('p4c.log', 'w+') as out:
+        p = Popen([P4C, 'output/%s.p4' % prog , '--json', 'output/%s.json' % prog],
+            stdout=out, stderr=out)
+        p.wait()
+        assert p.returncode == 0
 
 def dump_tsv(l, out_path):
     out = '\n'.join(map(lambda r: '\t'.join(map(lambda x: '%g'%x, r)), l))
@@ -64,18 +73,17 @@ if __name__ == '__main__':
         assert 'operations' in conf
         assert 'fields' in conf
         ret = benchmark_modification(int(conf['operations']), int(conf['fields']), 'mod')
-        assert (ret == True)
-        prog = 'main'
-        with open('p4c.log', 'w+') as out:
-            p = Popen([P4C, 'output/%s.p4' % prog , '--json', 'output/%s.json' % prog],
-                stdout=out, stderr=out)
-            p.wait()
-            assert (p.returncode == 0)
+        assert ret == True
+        build_p4_prog()
+    elif conf['type'] == 'mem':
+        assert 'registers' in conf and 'size' in conf and 'elements' in conf
+        ret = benchmark_memory(int(conf['registers']), int(conf['size']), int(conf['elements']), 1)
+        assert ret == True
+        build_p4_prog()
     else:
         assert False, "unknown experiment type: " + conf['type']
 
-    count = 100000
-    if 'count' in conf: count = int(conf['count'])
+    count = int(conf['count']) if 'count' in conf else 100000
 
     # Run the experiment with the switch and load generator
     sent, recv, tput, results = run_with_load(count=count)

@@ -91,6 +91,7 @@ static struct {
     unsigned long nb_packets;
     unsigned long latency;
     unsigned long total_packets;
+    float duration;
 } stat;
 
 /* Parse the arguments given in the command line of the application */
@@ -180,6 +181,13 @@ void
 process_pkt(u_char *arg, const struct pcap_pkthdr *header, const u_char *packet)
 {
     struct app* app_ctx = (struct app*) arg;
+
+    if (force_quit) {
+        pcap_breakloop(app_ctx->sniff);
+        if (app_ctx->out)
+            pcap_breakloop(app_ctx->out);
+    }
+
     int tv_offset = header->caplen - sizeof(struct timeval);
     struct timeval* tv = (struct timeval*)(packet + tv_offset);
     static struct timeval res;
@@ -196,8 +204,9 @@ process_pkt(u_char *arg, const struct pcap_pkthdr *header, const u_char *packet)
 void final_report(int total_sent)
 {
     float lost = (total_sent - stat.total_packets) / (float)total_sent;
-    fprintf(stderr, "%-10d %-10lu %-10.3f\n",
-        total_sent, stat.total_packets, lost);
+    float throughput = stat.total_packets / stat.duration;
+    fprintf(stderr, "%-10d %-10lu %-10.3f %f\n",
+        total_sent, stat.total_packets, lost, throughput);
 }
 
 void* sniff(void *arg)
@@ -205,10 +214,15 @@ void* sniff(void *arg)
     struct app* app_ctx = (struct app*) arg;
     int ret;
     /* now we can set our callback function */
+    struct timeval start_tv, end_tv, res;
+    gettimeofday(&start_tv, NULL);
     ret = pcap_loop(app_ctx->sniff, app_ctx->count, process_pkt,
         (u_char*)app_ctx);
     if (ret == -1)
         fprintf(stderr, "Error pcap_loop\n");
+    gettimeofday(&end_tv, NULL);
+    timersub(&end_tv, &start_tv, &res);
+    stat.duration = res.tv_sec + (float)res.tv_usec / US_PER_S;
 
     force_quit = 1;
     return NULL;
@@ -229,9 +243,6 @@ void* report_stat(void *arg)
         average_latency(ctx);
         sleep(1);
     }
-    pcap_breakloop(ctx->sniff);
-    if (ctx->out)
-        pcap_breakloop(ctx->out);
 
     return NULL;
 }

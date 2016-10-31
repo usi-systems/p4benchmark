@@ -15,6 +15,7 @@ P4C = os.path.join(P4BENCHMARK_ROOT, 'p4c-bm/p4c_bm/__main__.py')
 
 from packet_modification.bm_modification import benchmark_modification
 from state_access.bm_memory import benchmark_memory
+from action_complexity.bm_mod_field import benchmark_field_write
 
 def run_with_load(load=None, count=100000):
     sw = BMV2Switch(json_path='output/main.json', commands_path='output/commands.txt')
@@ -73,6 +74,11 @@ if __name__ == '__main__':
         assert 'operations' in conf
         assert 'fields' in conf
         ret = benchmark_modification(int(conf['operations']), int(conf['fields']), 'mod')
+        assert ret == True
+        build_p4_prog()
+    elif conf['type'] == 'field':
+        assert 'operations' in conf
+        ret = benchmark_field_write(int(conf['operations']))
         assert ret == True
         build_p4_prog()
     elif conf['type'] == 'mem':

@@ -21,7 +21,8 @@ setup(
     packages = ['p4gen', 'action_complexity', 'packet_modification', 'parsing',
                 'processing', 'state_access', 'tests'],
     package_dir = {'p4gen' : 'p4gen'},
-    package_data = {'p4gen' : ['template/*/*']},
+    package_data = {'p4gen' : ['template/*.txt', 'template/*.sh', 'template/*.py',
+    'template/*/*']},
     long_description=read('README.md'),
     classifiers=[
         "Development Status :: 1 - Alpha",

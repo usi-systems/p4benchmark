@@ -4,3 +4,4 @@ ovs-vsctl add-br br0 -- set bridge br0 datapath_type=netdev
 ovs-vsctl set bridge br0 protocols=OpenFlow15
 ovs-vsctl add-port br0 dpdk0 -- set Interface dpdk0 type=dpdk
 ovs-vsctl add-port br0 dpdk1 -- set Interface dpdk1 type=dpdk
+ovs-vsctl add-port br0 dpdk2 -- set Interface dpdk2 type=dpdk

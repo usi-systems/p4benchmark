@@ -58,7 +58,7 @@ print_app_usage(const char *app_name)
 
 static struct {
     int   count;
-    int   bps;
+    int   read_timeout;
     int   log_level;
     int   outstanding;
     char* pcap_file;
@@ -68,12 +68,13 @@ static struct {
     char* output_fn;
 } config;
 
+pcap_t* sniff;
+pcap_t* out;
+
 struct app {
-    int count;
+    unsigned long count;
     // pthread_mutex_t mutex_stat;
     struct pcap_pkthdr header;
-    pcap_t* sniff;
-    pcap_t* out;
     FILE *fp;
     const unsigned char* packet;
 };
@@ -88,9 +89,9 @@ static void free_config() {
 
 #define US_PER_S 1000000
 static struct {
-    unsigned long nb_packets;
+    unsigned long total_sent;
     unsigned long latency;
-    unsigned long total_packets;
+    unsigned long total_received;
     float duration;
 } stat;
 
@@ -100,7 +101,7 @@ void parse_args(int argc, char **argv)
     int opt;
     const char *app_name = argv[0];
     config.count = 1;
-    config.bps = 1;
+    config.read_timeout = 15;
     config.outstanding = 1;
     config.log_level = APP_INFO;
     /* Parse command line */
@@ -110,7 +111,7 @@ void parse_args(int argc, char **argv)
             config.count = atoi(optarg);
             break;
         case 't':
-            config.bps = atoi(optarg);
+            config.read_timeout = atoi(optarg);
             break;
         case 'l':
             config.log_level = atoi(optarg);
@@ -146,26 +147,6 @@ void parse_args(int argc, char **argv)
         config.output_fn = strdup("stat.csv");
 }
 
-void average_latency(struct app* ctx)
-{
-
-    if (stat.nb_packets <= 0) {
-        if (idle_timeout-- > 0)
-            return;
-        /* quite after three attempts */
-        force_quit = 1;
-        return;
-    }
-    // pthread_mutex_lock(&ctx->mutex_stat);
-    float avg_us = (float) stat.latency / stat.nb_packets;
-    fprintf(ctx->fp, "%lu,%f\n", stat.nb_packets, avg_us);
-    stat.total_packets += stat.nb_packets;
-    /* reset counter */
-    stat.nb_packets = 0;
-    stat.latency = 0;
-    // pthread_mutex_unlock(&ctx->mutex_stat);
-}
-
 void
 send_packet(struct app* app_ctx) {
     struct timeval tv;
@@ -174,7 +155,8 @@ send_packet(struct app* app_ctx) {
     memcpy(buf, app_ctx->packet, app_ctx->header.caplen);
     gettimeofday(&tv, NULL);
     memcpy(buf + app_ctx->header.caplen, &tv, sizeof(struct timeval));
-    pcap_inject(app_ctx->out, buf, buflen);
+    pcap_inject(out, buf, buflen);
+    stat.total_sent++;
 }
 
 void
@@ -182,44 +164,54 @@ process_pkt(u_char *arg, const struct pcap_pkthdr *header, const u_char *packet)
 {
     struct app* app_ctx = (struct app*) arg;
 
-    if (force_quit) {
-        pcap_breakloop(app_ctx->sniff);
-        if (app_ctx->out)
-            pcap_breakloop(app_ctx->out);
-    }
-
     int tv_offset = header->caplen - sizeof(struct timeval);
     struct timeval* tv = (struct timeval*)(packet + tv_offset);
     static struct timeval res;
     timersub(&header->ts, tv, &res);
     fprintf(stdout, "%d.%06d\n", (int) res.tv_sec, (int) res.tv_usec);
-
-    // pthread_mutex_lock(&app_ctx->mutex_stat);
     stat.latency += US_PER_S * res.tv_sec + res.tv_usec;
-    stat.total_packets++;
-    // pthread_mutex_unlock(&app_ctx->mutex_stat);
-    send_packet(app_ctx);
+    stat.total_received++;
+    if (stat.total_sent < app_ctx->count) {
+        send_packet(app_ctx);
+    }
 }
 
-void final_report(int total_sent)
+void report_stat()
 {
-    float lost = (total_sent - stat.total_packets) / (float)total_sent;
-    float throughput = stat.total_packets / stat.duration;
-    fprintf(stderr, "%-10d %-10lu %-10.3f %f\n",
-        total_sent, stat.total_packets, lost, throughput);
+    float lost = (stat.total_sent - stat.total_received) / (float)stat.total_sent;
+    float throughput = stat.total_received / stat.duration;
+    fprintf(stderr, "%-10lu %-10lu %-10.3f %f %f\n",
+        stat.total_sent, stat.total_received, lost, throughput, stat.duration);
 }
 
-void* sniff(void *arg)
+void* sniff_packet(void *arg)
 {
     struct app* app_ctx = (struct app*) arg;
-    int ret;
+    int ret = 0;
     /* now we can set our callback function */
     struct timeval start_tv, end_tv, res;
     gettimeofday(&start_tv, NULL);
-    ret = pcap_loop(app_ctx->sniff, app_ctx->count, process_pkt,
-        (u_char*)app_ctx);
-    if (ret == -1)
-        fprintf(stderr, "Error pcap_loop\n");
+
+    while (stat.total_sent < app_ctx->count) {
+        ret = pcap_dispatch(sniff, app_ctx->count, process_pkt, (u_char*)app_ctx);
+        if (ret == 0) {
+            send_packet(app_ctx);
+        }
+        if (ret == -1) {
+            pcap_perror(sniff, "pcap_dispatch");
+            return NULL;
+        }
+        else if (ret == -2) {
+            fprintf(stderr, "pcap_breakloop called\n");
+            return NULL;
+        }
+    }
+    while (idle_timeout) {
+        ret = pcap_dispatch(sniff, app_ctx->count, process_pkt, (u_char*)app_ctx);
+        if (ret == 0) {
+            idle_timeout--;
+        }
+    }
     gettimeofday(&end_tv, NULL);
     timersub(&end_tv, &start_tv, &res);
     stat.duration = res.tv_sec + (float)res.tv_usec / US_PER_S;
@@ -232,19 +224,10 @@ void signal_handler(int signum)
 {
     if (signum == SIGINT) {
         printf("\n\nSignal %d received, preparing to exit...\n", signum);
-        force_quit = 1;
+        pcap_breakloop(sniff);
+        if (out != sniff)
+            pcap_breakloop(out);
     }
-}
-
-void* report_stat(void *arg)
-{
-    struct app* ctx = (struct app *)arg;
-    while(!force_quit) {
-        average_latency(ctx);
-        sleep(1);
-    }
-
-    return NULL;
 }
 
 int count_packets(char *path_to_trace)
@@ -266,7 +249,6 @@ int main(int argc, char* argv[])
     if (config.log_level == APP_DEBUG)
         print_app_banner(argv[0]);
 
-    // pthread_t sniff_thread, stat_thread;
 
     signal(SIGTERM, signal_handler);
     signal(SIGINT, signal_handler);
@@ -275,16 +257,14 @@ int main(int argc, char* argv[])
     app_ctx.count = config.count * count_packets(config.pcap_file);
 
     pcap_t *input_packets = read_pcap(config.pcap_file);
-    /* Now just loop through extracting packets as long as we have
-     * some to read.
-     */
+
     app_ctx.packet = pcap_next(input_packets, &app_ctx.header);
     fprintf(stderr, "packet-size %d\n", app_ctx.header.caplen);
 
     int bufsize = app_ctx.header.caplen + sizeof(struct timeval);
 
     struct bpf_program fp;
-    app_ctx.sniff = init_dev_bufsize(&fp, config.interface, config.filter_exp, bufsize, 0.001);
+    sniff = init_dev_bufsize(&fp, config.interface, config.filter_exp, bufsize, config.read_timeout);
 
 
     #ifdef WRITE_TO_FILE
@@ -300,60 +280,32 @@ int main(int argc, char* argv[])
 
     if (config.send_interface != NULL) {
         struct bpf_program send_fp;
-        app_ctx.out = init_dev_bufsize(&send_fp, config.send_interface, NULL, bufsize, 0.001);
+        out = init_dev_bufsize(&send_fp, config.send_interface, NULL, bufsize, config.read_timeout);
     } else {
-        app_ctx.out = app_ctx.sniff;
+        out = sniff;
     }
 
     int i;
     for (i = 0; i < config.outstanding; i++)
         send_packet(&app_ctx);
 
-    // pthread_mutex_init(&app_ctx.mutex_stat, NULL);
 
-    // if (pthread_create(&sniff_thread, NULL, sniff, &app_ctx) < 0) {
-    //     fprintf(stderr, "Error creating sniff thread\n");
-    //     exit(EXIT_FAILURE);
-    // }
+    sniff_packet(&app_ctx);
 
-    // if (pthread_create(&stat_thread, NULL, report_stat, &app_ctx) < 0) {
-    //     fprintf(stderr, "Error creating report thread\n");
-    //     exit(EXIT_FAILURE);
-    // }
-    sniff(&app_ctx);
-
-    while(!force_quit) {
-        /* wait for SIGTERM or SIGINT */
-        sleep(1);
-    }
-
-
-    // if (pthread_join(sniff_thread, NULL)) {
-    //     fprintf(stderr, "Error joining thread\n");
-    //     exit(EXIT_FAILURE);
-    // }
-    // if (pthread_join(stat_thread, NULL)) {
-    //     fprintf(stderr, "Error joining thread\n");
-    //     exit(EXIT_FAILURE);
-    // }
-
-    final_report(app_ctx.count);
+    report_stat();
 
     if (config.log_level == APP_DEBUG)
         printf("Cleanup\n");
     /* cleanup */
     pcap_freecode(&fp);
-    pcap_close(app_ctx.sniff);
+    pcap_close(sniff);
     if (config.send_interface != NULL)
-        pcap_close(app_ctx.out);
+        pcap_close(out);
     pcap_close(input_packets);
     free_config();
 
     #ifdef WRITE_TO_FILE
         fclose(app_ctx.fp);
     #endif
-    // pthread_mutex_destroy(&app_ctx.mutex_stat);
-    // pthread_exit(NULL);
-
     return 0;
 }

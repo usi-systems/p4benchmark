@@ -48,27 +48,39 @@ function loadSlave(queue, rate, file)
     local mempool = memory:createMemPool()
     local bufs = mempool:bufArray()
     local pcapFile = pcap:newReader(file)
-    local txCtr = stats:newDevTxCounter(queue, "plain")
+    local txCtr = stats:newDevTxCounter(queue, "csv")
+    local file_name = table.concat({"txDev", queue.id, ".csv"})
+    local file = io.open(file_name, "w+")
+    io.output(file)
     while mg.running() do
         local n = pcapFile:read(bufs)
         if n == 0 then
             pcapFile:reset()
         end
         queue:sendN(bufs, n)
-        txCtr:update()
+	mpps, mbit, wireMbit, total, totalBytes = txCtr:getStats()
+        io.write(string.format("%f,%f,%f,%d,%d\n", mpps.avg, mbit.avg, wireMbit.avg, total, totalBytes))
     end
-    txCtr:finalize()
+    mpps, mbit, wireMbit, total, totalBytes = txCtr:getStats()
+    io.write(string.format("%f,%f,%f,%d,%d\n", mpps.avg, mbit.avg, wireMbit.avg, total, totalBytes))
+    io.close(file)
 end
 
 function counterSlave(queue)
-    local rxCtr = stats:newDevRxCounter(queue, "plain")
+    local rxCtr = stats:newDevRxCounter(queue, "csv")
     local bufs = memory.bufArray()
+    local file_name = table.concat({"rxDev", queue.id, ".csv"})
+    local file = io.open(file_name, "w+")
+    io.output(file)
     while mg.running() do
         local rx = queue:recv(bufs)
-        rxCtr:update()
+	mpps, mbit, wireMbit, total, totalBytes = rxCtr:getStats()
+        io.write(string.format("%f,%f,%f,%d,%d\n", mpps.avg, mbit.avg, wireMbit.avg, total, totalBytes))
         bufs:freeAll()
     end
-    rxCtr:finalize()
+    mpps, mbit, wireMbit, total, totalBytes = rxCtr:getStats()
+    io.write(string.format("%f,%f,%f,%d,%d\n", mpps.avg, mbit.avg, wireMbit.avg, total, totalBytes))
+    io.close(file)
 end
 
 

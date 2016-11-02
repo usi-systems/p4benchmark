@@ -17,16 +17,16 @@ def load_tsv(path):
 
 
 def parse_experiment(exp_dir):
-    assert os.path.isdir(exp_dir)
+    assert os.path.isdir(exp_dir), exp_dir
     json_path = os.path.join(exp_dir, 'experiment.json')
-    assert os.path.isfile(json_path)
+    assert os.path.isfile(json_path), json_path
 
     out_path = os.path.join(exp_dir, 'out')
-    assert os.path.isdir(out_path)
+    assert os.path.isdir(out_path), out_path
     results_path = os.path.join(out_path, 'results.tsv')
-    assert os.path.isfile(results_path)
+    assert os.path.isfile(results_path), results_path
     stats_path = os.path.join(out_path, 'load_stats.tsv')
-    assert os.path.isfile(stats_path)
+    assert os.path.isfile(stats_path), stats_path
 
     with open(json_path, 'r') as f:
         conf = json.load(f)
@@ -36,7 +36,7 @@ def parse_experiment(exp_dir):
 
     load_stats = load_tsv(stats_path)
     assert len(load_stats) == 1 and len(load_stats[0]) == 4
-    exp['sent'], exp['recv'], exp['lost'], exp['tput'] = load_stats[0]
+    exp.update(dict(zip(['sent', 'recv', 'lost', 'tput', 'duration'], load_stats[0])))
 
     results = load_tsv(results_path)
     cols = zip(*results)

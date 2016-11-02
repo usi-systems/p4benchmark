@@ -30,20 +30,18 @@ class SendB2B:
         self.count = count
         self.send_iface = send_iface
         self.recv_iface = recv_iface
+        self.timeout = 100
 
     def send_stats(self):
         with open(self.loss_path) as f:
             lines = filter(lambda l: len(l), map(string.strip, f.readlines()))
         data = shlex.split(lines[-1])
-        assert (len(data) == 4)
-        sent = float(data[0])
-        recv = float(data[1])
-        tput = float(data[3])
-        return (sent, recv, tput)
+        assert (len(data) == 5)
+        sent, recv, lost, tput, duration = map(float, data)
+        return (sent, recv, lost, tput, duration)
 
     def lost_count(self):
-        sent, recv, _ = self.send_stats()
-        return sent - recv
+        return self.send_stats()[2]
 
     def has_lost_packet(self):
         return self.lost_count()
@@ -54,8 +52,8 @@ class SendB2B:
         return map(lambda l: map(float, l.split()), lines)
 
     def run(self):
-        cmd = 'sudo {0} -p {1}'.format(self.sendb2b_bin,
-            self.pcap_path)
+        cmd = 'sudo {0} -p {1} -t {2}'.format(self.sendb2b_bin,
+            self.pcap_path, self.timeout)
         if self.recv_iface: cmd += ' -i %s' % self.recv_iface
         if self.send_iface: cmd += ' -s %s' % self.send_iface
         if self.count is not None: cmd += ' -c %d' % self.count
@@ -90,7 +88,7 @@ if __name__ == '__main__':
     pg.run()
 
     if pg.has_lost_packet():
-        sent, recv, _ = pg.send_stats()
+        sent, recv = pg.send_stats()[:2]
         print "has_lost_packet"
         print "sent:", sent, "recv:", recv
 

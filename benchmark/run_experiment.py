@@ -16,6 +16,7 @@ P4C = os.path.join(P4BENCHMARK_ROOT, 'p4c-bm/p4c_bm/__main__.py')
 from packet_modification.bm_modification import benchmark_modification
 from state_access.bm_memory import benchmark_memory
 from action_complexity.bm_mod_field import benchmark_field_write
+from processing.bm_pipeline import benchmark_pipeline
 
 def run_with_load(load=None, count=100000):
     sw = BMV2Switch(json_path='output/main.json', commands_path='output/commands.txt')
@@ -26,8 +27,8 @@ def run_with_load(load=None, count=100000):
     sender.run()
     sw.kill()
 
-    sent, recv, tput = sender.send_stats()
-    return (sent, recv, tput, sender.results())
+    sent, recv, lost, tput, duration = sender.send_stats()
+    return (sent, recv, lost, tput, duration, sender.results())
 
 def clean_results(results):
     if len(results) < 4: return results
@@ -86,15 +87,19 @@ if __name__ == '__main__':
         ret = benchmark_memory(int(conf['registers']), int(conf['size']), int(conf['elements']), 1)
         assert ret == True
         build_p4_prog()
+    elif conf['type'] == 'pipeline':
+        assert 'tables' in conf and 'tbl_size' in conf
+        ret = benchmark_pipeline(int(conf['tables']), int(conf['tbl_size']))
+        assert ret == True
+        build_p4_prog()
     else:
         assert False, "unknown experiment type: " + conf['type']
 
     count = int(conf['count']) if 'count' in conf else 100000
 
     # Run the experiment with the switch and load generator
-    sent, recv, tput, results = run_with_load(count=count)
+    sent, recv, lost, tput, duration, results = run_with_load(count=count)
 
     # Save the results
-    lost = sent - recv
     dump_tsv(clean_results(results), 'results.tsv')
-    dump_tsv([[sent, recv, lost, tput]], 'load_stats.tsv')
+    dump_tsv([[sent, recv, lost, tput, duration]], 'load_stats.tsv')

@@ -88,7 +88,7 @@ def get_read_state_pcap(udp_dest_port, out_dir, packet_size=256):
         ]
 
     pkt = add_eth_ip_udp_headers(udp_dest_port)
-    pkt /= MemTest(op=2, index=0)
+    pkt /= MemTest(op=1, index=0)
 
     pkt = add_padding(pkt, packet_size)
     wrpcap('%s/test.pcap' % out_dir, pkt)
@@ -105,7 +105,7 @@ def get_write_state_pcap(udp_dest_port, out_dir, packet_size=256):
 
     pkt = add_eth_ip_udp_headers(udp_dest_port)
 
-    pkt /= MemTest(op=1, index=0, data=0)
+    pkt /= MemTest(op=2, index=0, data=0)
 
     pkt = add_padding(pkt, packet_size)
     wrpcap('%s/test.pcap' % out_dir, pkt)
@@ -139,5 +139,11 @@ def get_packetmod_pcap(nb_headers, nb_fields, mod_type, out_dir, packet_size=256
 
 def get_set_field_pcap(out_dir, packet_size=256):
     pkt = add_eth_ip_udp_headers(0x9091)
+    pkt = add_padding(pkt, packet_size)
+    wrpcap('%s/test.pcap' % out_dir, pkt)
+
+def set_custom_field_pcap(nb_fields, out_dir, packet_size=256):
+    pkt = Ether(src='0C:C4:7A:A3:25:34', dst='0C:C4:7A:A3:25:35') / PTP()
+    pkt /= add_layers(nb_fields, 1)
     pkt = add_padding(pkt, packet_size)
     wrpcap('%s/test.pcap' % out_dir, pkt)

@@ -99,7 +99,7 @@ function timeStamper(txQueue, rxQueue, N, number, size, read_timeout)
             eth.payload.uint8[5] = 1
             local ptp = buf:getPtpPacket()
             for i = 0, 0 + number-1 do
-                ptp.payload.uint8[i*size + 11] = i + 1
+                ptp.payload.uint8[i*size + 11] = 1
             end
         end, 15) -- Wait 15 ms if there isn't any returned packets
         hist:update(lat)

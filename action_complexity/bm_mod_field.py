@@ -111,6 +111,7 @@ def benchmark_field_write(nb_operations, do_checksum=False):
     copy_scripts(out_dir)
     set_custom_field_pcap(nb_operations, out_dir, packet_size=256)
     generate_pisces_command(nb_operations, out_dir, do_checksum)
+    return True
 
 
 def benchmark_field_write_to_ip_udp(nb_operations, do_checksum=False):

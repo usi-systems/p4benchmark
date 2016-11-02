@@ -17,6 +17,7 @@ from packet_modification.bm_modification import benchmark_modification
 from state_access.bm_memory import benchmark_memory
 from action_complexity.bm_mod_field import benchmark_field_write
 from processing.bm_pipeline import benchmark_pipeline
+from parsing.bm_parser import benchmark_parser_header
 
 def run_with_load(load=None, count=100000):
     sw = BMV2Switch(json_path='output/main.json', commands_path='output/commands.txt')

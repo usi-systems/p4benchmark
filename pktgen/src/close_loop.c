@@ -276,7 +276,7 @@ int main(int argc, char* argv[])
 
     struct bpf_program fp;
     sniff = init_dev_bufsize(&fp, config.interface, config.filter_exp, bufsize, config.read_timeout);
-
+    pcap_set_buffer_size(sniff, bufsize);
 
     #ifdef WRITE_TO_FILE
         app_ctx.fp = fopen(config.output_fn, "w");
@@ -292,6 +292,7 @@ int main(int argc, char* argv[])
     if (config.send_interface != NULL) {
         struct bpf_program send_fp;
         out = init_dev_bufsize(&send_fp, config.send_interface, NULL, bufsize, config.read_timeout);
+        pcap_set_buffer_size(out, bufsize);
     } else {
         out = sniff;
     }

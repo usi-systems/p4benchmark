@@ -9,6 +9,8 @@ fi
 
 DONE_DIR="$EXPERIMENTS_DIR/done"
 TORUN_DIR="$EXPERIMENTS_DIR/torun"
+RUNNING_DIR="$EXPERIMENTS_DIR/running"
+mkdir -p $RUNNING_DIR
 
 while true
 do
@@ -18,13 +20,14 @@ do
         break
     fi
 
-    experiment_dir="$TORUN_DIR/$experiment_dirname"
+    mv "$TORUN_DIR/$experiment_dirname" "$RUNNING_DIR/"
+    experiment_dir="$RUNNING_DIR/$experiment_dirname"
     echo $experiment_dir
     mkdir $experiment_dir/out
 
     (cd $experiment_dir && time ./run.sh > out/stdout 2> out/stderr)
 
-    mv $experiment_dir $DONE_DIR
     sleep 15
+    mv $experiment_dir $DONE_DIR
 done
 

@@ -83,13 +83,18 @@ if __name__ == '__main__':
         assert ret == True
         build_p4_prog()
     elif conf['type'] == 'mem':
-        assert 'registers' in conf and 'size' in conf and 'elements' in conf
-        ret = benchmark_memory(int(conf['registers']), int(conf['size']), int(conf['elements']), 1)
+        assert 'registers' in conf and 'size' in conf and 'elements' in conf and 'operations' in conf
+        ret = benchmark_memory(int(conf['registers']), int(conf['size']), int(conf['elements']), int(conf['operations']), True)
         assert ret == True
         build_p4_prog()
     elif conf['type'] == 'pipeline':
         assert 'tables' in conf and 'tbl_size' in conf
         ret = benchmark_pipeline(int(conf['tables']), int(conf['tbl_size']))
+        assert ret == True
+        build_p4_prog()
+    elif conf['type'] == 'parser':
+        assert 'headers' in conf and 'fields' in conf
+        ret = benchmark_parser_header(int(conf['headers']), int(conf['fields']))
         assert ret == True
         build_p4_prog()
     else:

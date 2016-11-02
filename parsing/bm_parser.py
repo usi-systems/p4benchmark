@@ -5,8 +5,14 @@ from p4gen.genpcap import get_parser_header_pcap, get_parser_field_pcap
 from p4gen.p4template import *
 from p4gen import copy_scripts
 
-def generate_pisces_command(out_dir, checksum=False):
+def generate_pisces_command(out_dir, nb_headers, nb_fields, checksum=False):
     rules = add_pisces_forwarding_rule()
+    matches = 'ethernet_dstAddr=0x0708090A0B0C'
+    if nb_headers > 1:
+        matches += ',header_{0}_field_0=1'.format(nb_headers - 2)
+    actions = 'set_field:2->reg0,resubmit(,1)'
+    rules += add_openflow_rule(0, 32768, matches, actions)
+
     actions = ''
     if checksum:
         ip_checksum = 'calc_fields_update(ipv4_hdrChecksum,csum16,fields:ipv4_version_ihl,ipv4_diffserv,ipv4_totalLen,ipv4_identification,ipv4_flags_fragOffset,ipv4_ttl,ipv4_protocol,ipv4_srcAddr,ipv4_dstAddr),'
@@ -192,7 +198,7 @@ def benchmark_parser_header(nb_headers, nb_fields, do_checksum=False):
     program = add_forwarding_table(output_dir, program)
     write_output(output_dir, program)
     get_parser_header_pcap(nb_fields, nb_headers, output_dir)
-    generate_pisces_command(output_dir, do_checksum)
+    generate_pisces_command(output_dir, nb_headers, nb_fields, do_checksum)
 
     return True
 
@@ -212,6 +218,6 @@ def benchmark_parser_with_header_field(nb_fields, do_checksum=False):
     program = add_forwarding_table(output_dir, program)
     write_output(output_dir, program)
     get_parser_field_pcap(nb_fields, output_dir)
-    generate_pisces_command(output_dir)
+    generate_pisces_command(output_dir, 1, nb_fields)
 
     return True

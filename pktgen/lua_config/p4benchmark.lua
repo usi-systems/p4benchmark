@@ -39,6 +39,8 @@ function master(args)
         mg.startTask("counterSlave", dev1:getRxQueue(0))
         mg.startTask("counterSlave", dev3:getRxQueue(0))
         mg.startTask("counterSlave", dev4:getRxQueue(0))
+        -- DEBUG
+        -- mg.startTask("dumpSlave", dev2:getRxQueue(0))
     end
     mg.waitForTasks()
 end
@@ -97,7 +99,7 @@ function timeStamper(txQueue, rxQueue, N, number, size, read_timeout)
             eth.payload.uint8[5] = 1
             local ptp = buf:getPtpPacket()
             for i = 0, 0 + number-1 do
-                ptp.payload.uint8[i*size + 10] = i + 1
+                ptp.payload.uint8[i*size + 11] = i + 1
             end
         end, 15) -- Wait 15 ms if there isn't any returned packets
         hist:update(lat)
@@ -112,4 +114,20 @@ function timeStamper(txQueue, rxQueue, N, number, size, read_timeout)
     end
     hist:save("histogram.csv")
     print()
+end
+
+function dumpSlave(queue)
+    local bufs = memory.bufArray()
+    local pktCtr = stats:newPktRxCounter("Packets counted", "plain")
+    while mg.running() do
+        local rx = queue:tryRecv(bufs, 100)
+        for i = 1, rx do
+            local buf = bufs[i]
+            buf:dump()
+            pktCtr:countPacket(buf)
+        end
+        bufs:free(rx)
+        pktCtr:update()
+    end
+    pktCtr:finalize()
 end

@@ -32,9 +32,9 @@ def write_to_ip_and_udp(action_name, nb_operation):
     return add_compound_action(action_name, '', instruction_set)
 
 def write_to_custom_header(action_name, nb_operation):
-    instruction_set =''
-    for i in range(nb_operation):
-        instruction_set += '\tmodify_field(header_0.field_{0}, 1);\n'.format(i)
+    instruction_set ='\tmodify_field(header_0.field_0, 1);\n'
+    for i in range(1, nb_operation):
+        instruction_set += '\tmodify_field(header_0.field_{0}, header_0.field_{1});\n'.format(i, i-1)
     return add_compound_action(action_name, '', instruction_set)
 
 def generate_pisces_command_mod_ip_udp(nb_operation, out_dir, checksum=False):

@@ -15,8 +15,10 @@
 #define APP_INFO    1
 #define APP_DEBUG   2
 
+#define SAMPLE_SIZE 1000
+
 static int force_quit = 0;
-static int idle_timeout = 3;
+static int idle_timeout = 10;
 /*
  * app name/banner
  */
@@ -91,6 +93,7 @@ static void free_config() {
 static struct {
     unsigned long total_sent;
     unsigned long latency;
+    unsigned long sample_latency;
     unsigned long total_received;
     float duration;
 } stat;
@@ -168,9 +171,15 @@ process_pkt(u_char *arg, const struct pcap_pkthdr *header, const u_char *packet)
     struct timeval* tv = (struct timeval*)(packet + tv_offset);
     static struct timeval res;
     timersub(&header->ts, tv, &res);
-    fprintf(stdout, "%d.%06d\n", (int) res.tv_sec, (int) res.tv_usec);
+    // fprintf(stdout, "%d.%06d\n", (int) res.tv_sec, (int) res.tv_usec);
     stat.latency += US_PER_S * res.tv_sec + res.tv_usec;
+    stat.sample_latency += US_PER_S * res.tv_sec + res.tv_usec;
     stat.total_received++;
+    if (stat.total_received > 0 && stat.total_received % SAMPLE_SIZE == 0) {
+        float avg_latency = (float)stat.sample_latency / SAMPLE_SIZE / US_PER_S;
+        fprintf(stdout, "%.6f\n", avg_latency);
+        stat.sample_latency = 0;
+    }
     if (stat.total_sent < app_ctx->count) {
         send_packet(app_ctx);
     }
@@ -206,10 +215,12 @@ void* sniff_packet(void *arg)
             return NULL;
         }
     }
-    while (idle_timeout) {
-        ret = pcap_dispatch(sniff, app_ctx->count, process_pkt, (u_char*)app_ctx);
-        if (ret == 0) {
-            idle_timeout--;
+    if (stat.total_received < stat.total_sent) {
+        while (idle_timeout) {
+            ret = pcap_dispatch(sniff, app_ctx->count, process_pkt, (u_char*)app_ctx);
+            if (ret == 0) {
+                idle_timeout--;
+            }
         }
     }
     gettimeofday(&end_tv, NULL);

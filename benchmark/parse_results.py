@@ -35,7 +35,7 @@ def parse_experiment(exp_dir):
     exp = dict(conf.items())
 
     load_stats = load_tsv(stats_path)
-    assert len(load_stats) == 1 and len(load_stats[0]) == 4
+    assert len(load_stats) == 1 and len(load_stats[0]) == 5
     exp.update(dict(zip(['sent', 'recv', 'lost', 'tput', 'duration'], load_stats[0])))
 
     results = load_tsv(results_path)

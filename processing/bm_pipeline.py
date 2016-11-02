@@ -7,9 +7,16 @@ from p4gen.p4template import *
 
 def generate_pisces_command(nb_tables, out_dir):
     rules = add_pisces_forwarding_rule()
+    match = 'ethernet_dstAddr=0x0708090A0B0C'
+    action = 'set_field:2->reg0,resubmit(,1)'
+    rules += add_openflow_rule(0, 32768, match, action)
+
     actions = ''
     for i in range(nb_tables-1):
-        match = ''
+        match = 'ethernet_dstAddr=0x0CC47AA32535'
+        actions = 'resubmit(,{0})'.format(i+2)
+        rules += add_openflow_rule(i+1, 32768, match, actions)
+        match = 'ethernet_dstAddr=0x0708090A0B0C'
         actions = 'resubmit(,{0})'.format(i+2)
         rules += add_openflow_rule(i+1, 32768, match, actions)
 

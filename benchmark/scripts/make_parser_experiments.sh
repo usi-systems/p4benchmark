@@ -13,12 +13,12 @@ mkdir -p $DONE_DIR
 mkdir -p $TORUN_DIR
 
 pkt_count=50000
-for num_fields in 2 8 16 32 64 128 196
+for headers in 64 128
 do
-    for num_ops in 288
+    for fields in 2 8 16 32 64
     do
         json_file=$(./gen_experiment.py \
-            -p fields=$num_fields -p operations=$num_ops -p type=mod \
+            -p headers=$headers -p fields=$fields -p type=parser \
             -p count=$pkt_count \
             -o $TORUN_DIR)
         echo $json_file
@@ -29,7 +29,3 @@ do
         chmod +x $exp_dir/run.sh
     done
 done
-        
-
-
-        

@@ -8,8 +8,8 @@ from p4gen import copy_scripts
 def generate_pisces_command(out_dir, nb_headers, nb_fields, checksum=False):
     rules = add_pisces_forwarding_rule()
     matches = 'ethernet_dstAddr=0x0708090A0B0C'
-    if nb_headers > 1:
-        matches += ',header_{0}_field_0=1'.format(nb_headers - 2)
+    for i in range(nb_headers-1):
+        matches += ',header_{0}_field_0=1'.format(i)
     actions = 'set_field:2->reg0,resubmit(,1)'
     rules += add_openflow_rule(0, 32768, matches, actions)
 

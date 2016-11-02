@@ -291,7 +291,7 @@ int main(int argc, char* argv[])
 
     if (config.send_interface != NULL) {
         struct bpf_program send_fp;
-        out = init_dev_bufsize(&send_fp, config.send_interface, NULL, bufsize, config.read_timeout);
+        out = init_dev_bufsize(&send_fp, config.send_interface, NULL, bufsize, 0.001);
         pcap_set_buffer_size(out, bufsize);
     } else {
         out = sniff;

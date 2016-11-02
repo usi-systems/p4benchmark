@@ -30,7 +30,7 @@ class SendB2B:
         self.count = count
         self.send_iface = send_iface
         self.recv_iface = recv_iface
-        self.timeout = 100
+        self.timeout = 15
 
     def send_stats(self):
         with open(self.loss_path) as f:

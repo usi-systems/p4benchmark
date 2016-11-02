@@ -41,14 +41,22 @@ def benchmark_pipeline(nb_tables, table_size):
     program = p4_define() + ethernet() + ipv4() + tcp() + udp() + \
             forward_table() + nop_action()
 
+    # set Minimum table size
+    if table_size < 16:
+        table_size = 16
+
     applies = ''
     commands = ''
-    actions = '_nop;'
+    match = 'ethernet.dstAddr : exact;'
+    params = {1 : ("0C:C4:7A:A3:25:34", 1), 2: ("0C:C4:7A:A3:25:35", 2)}
+    action_name = 'forward'
+    actions = '%s;' % action_name
     for i in range(nb_tables):
         tbl_name = 'table_%d' % i
-        program += add_table_no_match(tbl_name, actions, table_size)
+        program += add_table(tbl_name, match, actions, table_size)
         applies += apply_table(tbl_name) + '\t'
-        commands += default_nop(tbl_name)
+        commands += add_rule(tbl_name, action_name, params[1][0], params[1][1])
+        commands += add_rule(tbl_name, action_name, params[2][0], params[2][1])
 
     program += control(fwd_tbl, applies)
 

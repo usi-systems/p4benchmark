@@ -12,14 +12,16 @@ TORUN_DIR="$EXPERIMENTS_DIR/torun"
 mkdir -p $DONE_DIR
 mkdir -p $TORUN_DIR
 
-pkt_count=50000
-for tables in 2 8 16 32
+pkt_count=100000
+tbl_size=1024
+for trial in $(seq 32)
 do
-    for tbl_size in 2 8 16 32 64 128 256
+    for tables in 2 8 16 24 32 40 48 56 64
     do
         json_file=$(./gen_experiment.py \
             -p tables=$tables -p tbl_size=$tbl_size -p type=pipeline \
             -p count=$pkt_count \
+            -p trial=$trial \
             -o $TORUN_DIR)
         echo $json_file
         exp_dir=$(dirname $json_file)

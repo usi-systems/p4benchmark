@@ -11,7 +11,6 @@ local stats  = require "stats"
 local pcap   = require "pcap"
 
 local PKT_SIZE = 192
-local RUNTIME = 60
 
 function configure(parser)
     parser:description("Demonstrate and test hardware timestamping capabilities.\n")
@@ -21,6 +20,7 @@ function configure(parser)
     parser:option("-n --number", "Number of headers"):default(2):convert(tonumber):target("number")
     parser:option("-p --packet", "Number of packets"):default(1000):convert(tonumber):target("packet")
     parser:option("-s --size", "Header size"):default(8):convert(tonumber):target("size")
+    parser:option("-d --duration", "Maximum test duration"):default(600):convert(tonumber):target("duration")
     local args = parser:parse()
     return args
 end
@@ -35,7 +35,7 @@ function master(args)
     -- mg.startTask("loadSlave", dev2:getTxQueue(0), args.rate, args.file)
     -- mg.startTask("loadSlave", dev3:getTxQueue(0), args.rate, args.file)
     -- mg.startTask("loadSlave", dev4:getTxQueue(0), args.rate, args.file)
-    mg.startTask("timeStamper", dev1:getTxQueue(0), dev2:getRxQueue(0), args.packet, args.number, args.size, args.timeout)
+    mg.startTask("timeStamper", dev1:getTxQueue(0), dev2:getRxQueue(0), args.packet, args.number, args.size, args.timeout, args.duration)
     -- mg.startTask("counterSlave", dev1:getRxQueue(0))
     -- mg.startTask("counterSlave", dev3:getRxQueue(0))
     -- mg.startTask("counterSlave", dev4:getRxQueue(0))
@@ -85,12 +85,12 @@ function counterSlave(queue)
 end
 
 
-function timeStamper(txQueue, rxQueue, N, number, size, read_timeout)
+function timeStamper(txQueue, rxQueue, N, number, size, read_timeout, duration)
     local hist = hist:new()
     mg.sleepMillis(1000) -- ensure that the load task is running
     local timestamper = ts:newTimestamper(txQueue, rxQueue)
     -- local rateLimit = timer:new(read_timeout)
-    local runtime = timer:new(RUNTIME)
+    local runtime = timer:new(duration)
     local counter = 0
     while counter < N and runtime:running() and mg.running() do
         local lat, numPkts = timestamper:measureLatency(PKT_SIZE, function(buf)

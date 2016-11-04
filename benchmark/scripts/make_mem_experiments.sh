@@ -15,14 +15,17 @@ mkdir -p $TORUN_DIR
 pkt_count=100000
 for trial in $(seq 32)
 do
-    for element_size in 8 32
+    for element_size in 32
     do
-        for operations in 1 2 4 8 12 16 20 24 28 32
+        #for operations in 1 2 4 8 12 16 20 24 28 32
+        for registers in 1 2 4 8 12 16 20 24 28 32
         do
-            registers=$((128/operations))
+            #registers=1
+            operations=128
+            elements=128
             json_file=$(./gen_experiment.py \
                 -p registers=$registers -p operations=$operations \
-                -p size=$element_size -p elements=$operations -p type=mem \
+                -p size=$element_size -p elements=$elements -p type=mem \
                 -p trial=$trial \
                 -p count=$pkt_count \
                 -o $TORUN_DIR)

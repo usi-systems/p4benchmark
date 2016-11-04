@@ -27,6 +27,7 @@ do
                 -p registers=$registers -p operations=$operations \
                 -p size=$element_size -p elements=$elements -p type=mem \
                 -p trial=$trial \
+                -p write=false \
                 -p count=$pkt_count \
                 -o $TORUN_DIR)
             echo $json_file

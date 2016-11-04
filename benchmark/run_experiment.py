@@ -85,7 +85,9 @@ if __name__ == '__main__':
         build_p4_prog()
     elif conf['type'] == 'mem':
         assert 'registers' in conf and 'size' in conf and 'elements' in conf and 'operations' in conf
-        ret = benchmark_memory(int(conf['registers']), int(conf['size']), int(conf['elements']), int(conf['operations']), True)
+        write_op = True
+        if 'write' in conf: write_op = conf['write'].lower() in ['1', 'true', 't', 'yes', 'y']
+        ret = benchmark_memory(int(conf['registers']), int(conf['size']), int(conf['elements']), int(conf['operations']), write_op)
         assert ret == True
         build_p4_prog()
     elif conf['type'] == 'pipeline':

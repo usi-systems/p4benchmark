@@ -1,3 +1,5 @@
+import logging
+logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
 from scapy.all import Packet, ShortField, XBitField, IntField
 from scapy.all import Ether, IP, UDP, Padding
 from scapy.all import wrpcap, bind_layers

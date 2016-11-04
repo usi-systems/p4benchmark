@@ -9,7 +9,7 @@ def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 setup(
-    name = "P4 Benchmark project",
+    name = "P4Benchmark project",
     version = "0.0.1",
     author = "Huynh Tu Dang",
     author_email = "huynh.tu.dang@usi.ch",
@@ -18,6 +18,14 @@ setup(
     license = "BSD",
     keywords = "P4 benchmark",
     url = "https://github.com/usi-systems/p4benchmark",
+    entry_points = {
+        'console_scripts': [
+            'p4benchmark=p4gen.p4bench:main',
+        ],
+    },
+    install_requires=[
+        'scapy',
+    ],
     packages = ['p4gen', 'action_complexity', 'packet_modification', 'parsing',
                 'processing', 'state_access', 'tests'],
     package_dir = {'p4gen' : 'p4gen'},
@@ -29,4 +37,6 @@ setup(
         "Topic :: Benchmark",
         "License :: OSI Approved :: BSD License",
     ],
+    test_suite='nose.collector',
+    tests_require=['nose'],
 )

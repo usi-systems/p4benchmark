@@ -1,25 +1,20 @@
 import os
 import unittest
 from subprocess import call
+from parsing.bm_parser import benchmark_parser_header
+from parsing.bm_parser import benchmark_parser_with_header_field
 from parsing.bm_parser import parser_complexity
 
 class ParserTests(unittest.TestCase):
     """Parser test cases."""
 
-    def setUp(self):
-        self.assertIsNotNone(os.environ.get('P4BENCHMARK_ROOT'))
-        self.assertIsNotNone(os.environ.get('PYTHONPATH'))
-        pypath = os.environ.get('PYTHONPATH')
-        p4bench = os.environ.get('P4BENCHMARK_ROOT')
-        self.assertIn(p4bench, p4bench.split(os.pathsep))
-        bmv2 = os.path.join(p4bench, 'behavioral-model')
-        self.p4c = os.path.join(p4bench, 'p4c-bm/p4c_bm/__main__.py')
-        switch_path = os.path.join(bmv2, 'targets/simple_switch/simple_switch')
-        cli_path = os.path.join(bmv2, 'tools/runtime_CLI.py')
+    def test_benchmark_parser_header(self):
+        ret = benchmark_parser_header(10, 1)
+        self.assertTrue(ret)
 
-
-    def tearDown(self):
-        pass
+    def test_benchmark_parser_field(self):
+        ret = benchmark_parser_with_header_field(10)
+        self.assertTrue(ret)
 
     def test_benchmark_parser_complexity_small(self):
         ret = parser_complexity(2, 2)

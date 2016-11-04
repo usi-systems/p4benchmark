@@ -18,7 +18,7 @@ The generated P4 program parses Ethernet,
 PTP and a customized header containing 4 fields and each field is 16-bit wide.
 
 ```
-python generate_p4_program.py --feature parse-field --fields 4
+p4benchmark --feature parse-field --fields 4
 ```
 
 * __Benchmark parse header__
@@ -29,7 +29,7 @@ a customized number of headers each containing a customized number of fields.
 Each field is 16-bit wide.
 
 ```
-python generate_p4_program.py --feature parse-header --fields 4 --headers 4
+p4benchmark --feature parse-header --fields 4 --headers 4
 ```
 
 * __Benchmark parse complex__
@@ -39,7 +39,7 @@ The generated P4 program parses Ethernet, PTP and
 a parse graph that has the depth of 2 and each node has 2 branches.
 
 ```
-python generate_p4_program.py --feature parse-complex --depth 2 --fanout 2
+p4benchmark --feature parse-complex --depth 2 --fanout 2
 ```
 
 * __Benchmark action complexity__
@@ -48,7 +48,7 @@ python generate_p4_program.py --feature parse-complex --depth 2 --fanout 2
 The generated P4 program has N=2 number of set-field operations.
 
 ```
-python generate_p4_program.py --feature set-field --operations 2
+p4benchmark --feature set-field --operations 2
 ```
 
 * __Benchmark header addition__
@@ -57,7 +57,7 @@ python generate_p4_program.py --feature set-field --operations 2
 The generated P4 program adds N=2 number of headers to packets.
 
 ```
-python generate_p4_program.py --feature add-header --headers 2
+p4benchmark --feature add-header --headers 2
 ```
 
 * __Benchmark header removal__
@@ -66,7 +66,7 @@ python generate_p4_program.py --feature add-header --headers 2
 The generated P4 program removes N=2 number of headers to packets.
 
 ```
-python generate_p4_program.py --feature rm-header --headers 2
+p4benchmark --feature rm-header --headers 2
 ```
 
 * __Benchmark processing pipeline__
@@ -75,7 +75,7 @@ python generate_p4_program.py --feature rm-header --headers 2
 The generated P4 program applies N=2 number of tables.
 
 ```
-python generate_p4_program.py --feature pipeline --tables 2 --table-size 32
+p4benchmark --feature pipeline --tables 2 --table-size 32
 ```
 
 * __Benchmark Read State__
@@ -84,7 +84,7 @@ python generate_p4_program.py --feature pipeline --tables 2 --table-size 32
 The generated P4 program declares 1 register and performs 10 number of read operations.
 
 ```
-python generate_p4_program.py --feature read-state --registers 1 --operation 10
+p4benchmark --feature read-state --registers 1 --operation 10
 ```
 
 * __Benchmark Write State__
@@ -93,7 +93,7 @@ python generate_p4_program.py --feature read-state --registers 1 --operation 10
 The generated P4 program declares 1 register and performs 10 number of write operations.
 
 ```
-python generate_p4_program.py --feature write-state --registers 1 --operation 10
+p4benchmark --feature write-state --registers 1 --operation 10
 ```
 
 ## Generated Files

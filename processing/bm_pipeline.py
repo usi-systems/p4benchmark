@@ -14,15 +14,15 @@ def generate_pisces_command(nb_tables, table_size, out_dir):
     actions = ''
     for i in range(nb_tables-1):
         match = 'ethernet_dstAddr=0x0CC47AA32535'
-        actions = 'resubmit(,{0})'.format(i+2)
+        actions = 'set_field:2->reg0,resubmit(,{0})'.format(i+2)
         rules += add_openflow_rule(i+1, 32768, match, actions)
         match = 'ethernet_dstAddr=0x0708090A0B0C'
-        actions = 'resubmit(,{0})'.format(i+2)
+        actions = 'set_field:2->reg0,resubmit(,{0})'.format(i+2)
         rules += add_openflow_rule(i+1, 32768, match, actions)
         for j in range(table_size-2):
             mac_addr = "0x0{0}C47{1}A353{2}".format(j%10, j%7, j%5)
             match = 'ethernet_dstAddr=%s' % mac_addr
-            actions = 'resubmit(,{0})'.format(i+2)
+            actions = 'set_field:2->reg0,resubmit(,{0})'.format(i+2)
             rules += add_openflow_rule(i+1, 32768, match, actions)
 
     actions = 'deparse,output:NXM_NX_REG0[]'
@@ -62,13 +62,16 @@ def benchmark_pipeline(nb_tables, table_size):
     match = 'ethernet.dstAddr : exact;'
     params = {1 : ("0C:C4:7A:A3:25:34", 1), 2: ("0C:C4:7A:A3:25:35", 2)}
     action_name = 'forward'
-    actions = '%s;' % action_name
-    for i in range(nb_tables):
+    for i in range(1, nb_tables):
+        comp_action = '%s%d' % (action_name, i)
+        action_param = '_port'
+        instruction = 'modify_field(standard_metadata.egress_spec, %s);' % action_param
+        program += add_compound_action(comp_action, action_param, instruction)
         tbl_name = 'table_%d' % i
-        program += add_table(tbl_name, match, actions, table_size)
+        program += add_table(tbl_name, match, '%s;' % comp_action, table_size)
         applies += apply_table(tbl_name) + '\t'
-        commands += add_rule(tbl_name, action_name, params[1][0], params[1][1])
-        commands += add_rule(tbl_name, action_name, params[2][0], params[2][1])
+        commands += add_rule(tbl_name, comp_action, params[1][0], params[1][1])
+        commands += add_rule(tbl_name, comp_action, params[2][0], params[2][1])
 
 
     program += control(fwd_tbl, applies)

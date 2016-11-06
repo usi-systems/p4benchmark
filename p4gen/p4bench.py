@@ -1,5 +1,9 @@
 #!/usr/bin/env python
 
+import os
+import sys
+sys.path.insert(0, os.path.abspath('..'))
+
 import argparse
 
 from parsing.bm_parser import benchmark_parser_header
@@ -69,6 +73,11 @@ def main():
     elif args.feature == 'write-state':
         benchmark_memory(args.registers, args.element_width, args.nb_element,
                             args.operations, True)
+    else:
+        parser.print_help()
+        sys.exit(0)
+
+    print "Generate files to 'output' directory"
 
 if __name__=='__main__':
     main()

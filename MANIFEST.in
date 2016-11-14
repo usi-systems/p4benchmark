@@ -1,1 +1,5 @@
 include README.rst
+include p4gen/template/define.txt
+include p4gen/template/run_switch.sh
+include p4gen/template/run_test.py
+include p4gen/template/*/*.txt

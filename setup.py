@@ -1,7 +1,7 @@
 import os
 from setuptools import setup
 
-VERSION = "0.1.1"
+VERSION = "0.1.3"
 # Utility function to read the README file.
 # Used for the long_description.  It's nice, because now 1) we have a top level
 # README file and 2) it's easier to type in the README file than to put a raw
@@ -30,7 +30,7 @@ setup(
     packages = ['p4gen', 'action_complexity', 'packet_modification', 'parsing',
                 'processing', 'state_access', 'tests'],
     package_dir = {'p4gen' : 'p4gen'},
-    package_data = {'p4gen' : ['template/*.txt', 'template/*.sh', 'template/*.py',
+    package_data = {'p4gen' : ['template/define.txt', 'template/run_switch.sh', 'template/run_test.py',
     'template/*/*']},
     long_description=read('README.rst'),
     test_suite='nose.collector',
